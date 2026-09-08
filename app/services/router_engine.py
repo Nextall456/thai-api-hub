@@ -8,8 +8,8 @@ from .providers import BackendError, chat_once, chat_stream, ollama_models, pick
 ALIAS_INFO = {
     "thai-hub/auto": "เลือกเส้นทางอัตโนมัติ คุ้มค่าสุดตามแพ็กเกจ (แนะนำ)",
     "thai-hub/local": "AI รันในเครื่องเซิร์ฟเวอร์ ฟรี ไม่ออกบิลนอกบ้าน",
-    "thai-hub/free": "โมเดลฟรีคุณภาพดีจาก OpenRouter (Llama 3.3 70B, DeepSeek V3 ฯลฯ)",
-    "thai-hub/cheap": "โมเดลราคาประหยัดที่งานดี (DeepSeek V3, Gemini Flash, GPT-4o-mini)",
+    "thai-hub/free": "โมเดลฟรีคุณภาพสูงจาก AI ระดับโลก (Llama 3.3 70B, DeepSeek V3 ฯลฯ)",
+    "thai-hub/cheap": "โมเดลพรีเมียมราคาถูกที่งานดี (DeepSeek V3.1, Gemini Flash, GPT-4o-mini)",
     "thai-hub/best": "สายคุณภาพ — ลองตัวที่ฉลาดที่สุดก่อน แล้วค่อยลดหลั่น",
 }
 # alias นี้ต้องใช้แพ็กเกจ tier ขั้นต่ำเท่าไร
