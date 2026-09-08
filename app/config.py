@@ -34,7 +34,8 @@ SITE_NAME = os.environ.get("SITE_NAME", "Thai API Hub")
 SITE_URL = os.environ.get("SITE_URL", f"http://localhost:{PORT}").rstrip("/")
 ADMIN_EMAILS = [e.strip().lower() for e in os.environ.get("ADMIN_EMAILS", "").split(",") if e.strip()]
 
-# การตรวจสอบการชำระเงินอัตโนมัติ (ถ้าตั้งเป็น True ระบบจะอนุมัติทันทีเมื่อผู้ใช้แจ้งชำระ)
-AUTO_VERIFY_PAYMENT = os.environ.get("AUTO_VERIFY_PAYMENT", "false").lower() == "true"
+# Telegram Bot สำหรับแจ้งเตือนแอดมิน
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
 
 TRIAL_DAYS = int(os.environ.get("TRIAL_DAYS", "7"))

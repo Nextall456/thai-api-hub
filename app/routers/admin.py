@@ -6,6 +6,7 @@ from fastapi.responses import RedirectResponse
 from urllib.parse import quote
 
 from .. import config, db
+from ..services import telegram as tg_notify
 from ..services.providers import ollama_models
 from ..web import get_user, render
 
@@ -80,6 +81,10 @@ async def verify_payment(request: Request, pay_id: int):
     else:
         db.x("UPDATE subscriptions SET status='active', starts_at=?, ends_at=? WHERE id=?",
              (db.now_str(), db.plus(period_days), sub["id"]))
+    # ดึงข้อมูลผู้ใช้และแพ็กเกจเพื่อแจ้งเตือน
+    pay_info = db.q("SELECT pay.*, p.name_th plan_name FROM payments pay JOIN plans p ON p.code=pay.plan_code WHERE pay.id=?", (pay_id,), one=True)
+    user_email = db.q("SELECT email FROM users WHERE id=?", (pay["user_id"],), one=True)["email"]
+    await tg_notify.notify_payment_verified(pay_info, user_email, pay_info["plan_name"], auto=False)
     return RedirectResponse("/admin?msg=" + quote(f"อนุมัติบิล #{pay_id} แล้ว — เปิดใช้งาน {period_days} วัน"), 303)
 
 
@@ -88,8 +93,12 @@ async def reject_payment(request: Request, pay_id: int):
     user = _require_admin(request)
     if not user:
         return RedirectResponse("/dashboard", 303)
+    pay = db.q("SELECT pay.*, p.name_th plan_name FROM payments pay JOIN plans p ON p.code=pay.plan_code WHERE pay.id=?", (pay_id,), one=True)
     db.x("UPDATE payments SET status='rejected', verified_at=? WHERE id=? AND status='pending'",
          (db.now_str(), pay_id))
+    if pay:
+        user_email = db.q("SELECT email FROM users WHERE id=?", (pay["user_id"],), one=True)["email"]
+        await tg_notify.notify_payment_rejected(pay, user_email, pay["plan_name"])
     return RedirectResponse("/admin?msg=" + quote("ปฏิเสธบิลแล้ว"), 303)
 
 

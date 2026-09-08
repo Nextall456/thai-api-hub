@@ -10,6 +10,7 @@ from .. import config, db, security
 from ..api_errors import ApiError
 from ..services import router_engine
 from ..services import usage as usage_svc
+from ..services import telegram as tg_notify
 from ..services.providers import price_map
 from ..web import get_user, render
 
@@ -156,6 +157,9 @@ async def invoice_notify(request: Request, pay_id: int, note: str = Form("")):
     db.x("UPDATE payments SET paid_at=?, note=? WHERE id=? AND user_id=? AND status='pending'",
          (db.now_str(), note.strip()[:200], pay_id, user["id"]))
 
+    # แจ้งเตือนแอดมิน: มีการแจ้งชำระเงินใหม่
+    await tg_notify.notify_payment_pending(pay, user["email"], plan["name_th"])
+
     if config.AUTO_VERIFY_PAYMENT:
         # โหมดอนุมัติอัตโนมัติ (เปิด/ปิดที่ AUTO_VERIFY_PAYMENT ใน .env)
         period_days = 365 if pay["billing_period"] == "year" else 30
@@ -173,6 +177,8 @@ async def invoice_notify(request: Request, pay_id: int, note: str = Form("")):
                  (db.now_str(), db.plus(period_days), sub["id"]))
         db.x("UPDATE payments SET status='verified', verified_at=? WHERE id=?",
              (db.now_str(), pay_id))
+        # แจ้งเตือนแอดมิน: อนุมัติอัตโนมัติ
+        await tg_notify.notify_payment_verified(pay, user["email"], plan["name_th"], auto=True)
         return RedirectResponse(f"/dashboard/billing/invoice/{pay_id}?msg=" +
                                 quote("อนุมัติอัตโนมัติแล้ว — แพ็กเกจเปิดใช้งานทันที"), 303)
 

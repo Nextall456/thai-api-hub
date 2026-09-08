@@ -7,6 +7,7 @@ from fastapi.responses import RedirectResponse
 
 from .. import config, db, security
 from ..services.router_engine import ALIAS_INFO
+from ..services import telegram as tg_notify
 from ..web import create_session, drop_session, get_user, render
 
 router = APIRouter()
@@ -73,6 +74,8 @@ async def signup(request: Request, name: str = Form(""), email: str = Form(""),
                "VALUES(?,?,?,?,?,?)",
                (email, security.hash_password(password), name, role,
                 db.plus(config.TRIAL_DAYS), db.now_str()))
+    user = db.q("SELECT * FROM users WHERE id=?", (uid,), one=True)
+    await tg_notify.notify_new_user(user, "ทดลองใช้ฟรี 7 วัน")
     resp = RedirectResponse("/dashboard?msg=" + quote(
         f"สมัครสำเร็จ! ทดลองใช้ฟรี {config.TRIAL_DAYS} วัน — สร้าง API Key ได้เลย"), 303)
     create_session(resp, uid)
