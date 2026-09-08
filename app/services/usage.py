@@ -22,21 +22,6 @@ def get_active_plan(user: dict) -> tuple[dict | None, str]:
         except ValueError:
             pass
     return None, "none"
-    row = db.q(
-        "SELECT p.* FROM subscriptions s JOIN plans p ON p.code = s.plan_code "
-        "WHERE s.user_id = ? AND s.status = 'active' AND s.ends_at > ? "
-        "ORDER BY s.ends_at DESC LIMIT 1",
-        (user["id"], db.now_str()), one=True)
-    if row:
-        return row, "sub"
-    t = user.get("trial_ends_at") or ""
-    if t:
-        try:
-            if datetime.strptime(t, db.FMT) > datetime.now():
-                return db.q("SELECT * FROM plans WHERE code='trial'", one=True), "trial"
-        except ValueError:
-            pass
-    return None, "none"
 
 
 def check_quota(user_id: int, key_id: int | None, plan: dict) -> None:

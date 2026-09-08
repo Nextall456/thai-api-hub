@@ -1,5 +1,6 @@
 """Dashboard ผู้ใช้: ภาพรวม, API Keys, บิล/สมัครแพ็กเกจ, Playground"""
 import time
+from datetime import datetime, timedelta
 from urllib.parse import quote
 
 from fastapi import APIRouter, Form, Request
@@ -147,10 +148,36 @@ async def invoice_notify(request: Request, pay_id: int, note: str = Form("")):
     user = _require(request)
     if not user:
         return RedirectResponse("/login", 303)
+    pay = db.q("SELECT * FROM payments WHERE id=? AND user_id=? AND status='pending'",
+               (pay_id, user["id"]), one=True)
+    if not pay:
+        return RedirectResponse("/dashboard/billing?msg=" +
+                                quote("ไม่พบใบแจ้งหนี้นี้ หรือถูกจัดการไปแล้ว"), 303)
     db.x("UPDATE payments SET paid_at=?, note=? WHERE id=? AND user_id=? AND status='pending'",
          (db.now_str(), note.strip()[:200], pay_id, user["id"]))
+
+    if config.AUTO_VERIFY_PAYMENT:
+        # โหมดอนุมัติอัตโนมัติ (เปิด/ปิดที่ AUTO_VERIFY_PAYMENT ใน .env)
+        period_days = 365 if pay["billing_period"] == "year" else 30
+        sub = db.q("SELECT * FROM subscriptions WHERE id=?", (pay["subscription_id"],), one=True)
+        existing = db.q("SELECT * FROM subscriptions WHERE user_id=? AND plan_code=? AND status='active' "
+                        "AND ends_at>? AND id != ?",
+                        (pay["user_id"], pay["plan_code"], db.now_str(), sub["id"]), one=True)
+        if existing:
+            base = datetime.strptime(existing["ends_at"], db.FMT)
+            new_end = (base + timedelta(days=period_days)).strftime(db.FMT)
+            db.x("UPDATE subscriptions SET ends_at=? WHERE id=?", (new_end, existing["id"]))
+            db.x("UPDATE subscriptions SET status='expired' WHERE id=?", (sub["id"],))
+        else:
+            db.x("UPDATE subscriptions SET status='active', starts_at=?, ends_at=? WHERE id=?",
+                 (db.now_str(), db.plus(period_days), sub["id"]))
+        db.x("UPDATE payments SET status='verified', verified_at=? WHERE id=?",
+             (db.now_str(), pay_id))
+        return RedirectResponse(f"/dashboard/billing/invoice/{pay_id}?msg=" +
+                                quote("อนุมัติอัตโนมัติแล้ว — แพ็กเกจเปิดใช้งานทันที"), 303)
+
     return RedirectResponse(f"/dashboard/billing/invoice/{pay_id}?msg=" +
-                            quote("แจ้งชำระเงินแล้ว — รอผู้ดูแลตรวจสอบภายใน 1-24 ชม."), 303)
+                            quote("แจ้งชำระเงินแล้ว — รอผู้ดูแลตรวจสอบสลิปและอนุมัติ (1-24 ชม.)"), 303)
 
 
 # ---------------- Playground ----------------

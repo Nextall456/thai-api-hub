@@ -10,7 +10,7 @@
         <tr><td class="muted">แพ็กเกจ</td><td>{{ pay.plan_name }} ({{ pay.billing_period == 'year' and 'รายปี' or 'รายเดือน' }})</td></tr>
         <tr><td class="muted">ยอดที่ต้องชำระ</td><td class="amount-big">฿{{ '%.2f'|format(pay.amount_thb) }}</td></tr>
         <tr><td class="muted">สถานะ</td>
-          <td>{% if pay.status == 'pending' %}{% if pay.paid_at %}<span class="badge badge-wait">แจ้งชำระแล้ว — รอตรวจสอบ</span>{% else %}<span class="badge badge-warn">รอการชำระ</span>{% endif %}
+          <td>{% if pay.status == 'pending' %}{% if pay.paid_at %}<span class="badge badge-wait">รออนุมัติการใช้งาน — ผู้ดูแลกำลังตรวจสอบสลิป</span>{% else %}<span class="badge badge-warn">รอการชำระ</span>{% endif %}
               {% elif pay.status == 'verified' %}<span class="badge badge-ok">ชำระสำเร็จ — เปิดใช้งานแล้ว</span>
               {% else %}<span class="badge badge-fail">ถูกปฏิเสธ — ติดต่อผู้ดูแล</span>{% endif %}
           </td></tr>
