@@ -7,7 +7,7 @@
     <h1>โปรไฟล์สมาชิก</h1>
 
     <div class="card member-card">
-      <div class="avatar">{{ initial }}</div>
+      <div class="avatar">{% if (user.name or user.email)[0].isalpha() %}{{(user.name or user.email)[0].upper()}{% else %}✦{% endif %}</div>
       <div>
         <h2 style="font-size:1.3rem">{{ user.name or user.email }}</h2>
         <div class="muted">{{ user.email }} · สมาชิกตั้งแต่ {{ user.created_at[:10] }}</div>
