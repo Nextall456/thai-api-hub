@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}ประวัติการใช้งาน — {{ site_name }}{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    {% include "dash_nav.html" %}
+    <h1>ประวัติการใช้งาน</h1>
+
+    <div class="grid grid-2 stat-cards" style="margin-bottom:20px">
+      <div class="card"><div class="stat-label">คำขอวันนี้</div><div class="stat-value">{{ '{:,}'.format(stats.today_requests) }}</div>
+        {% if plan %}<div class="muted">โควตา {{ '{:,}'.format(plan.daily_requests) }}/วัน</div>{% endif %}</div>
+      <div class="card"><div class="stat-label">tokens เดือนนี้</div><div class="stat-value">{{ '{:,}'.format(stats.month_tokens) }}</div>
+        {% if plan %}<div class="muted">โควตา {{ '{:,}'.format(plan.monthly_tokens) }}</div>{% endif %}</div>
+    </div>
+
+    <div class="card">
+      <h3>การใช้งาน 14 วันล่าสุด</h3>
+      <div class="bars">
+        {% for c in chart %}
+        <div class="bar-col" title="{{ c.date }}: {{ c.requests }} คำขอ">
+          <div class="bar" style="height: {{ (c.requests / max_c * 100) | round(0, 'floor') | int }}%"></div>
+          <span class="bar-label">{{ c.date[8:] }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if by_model %}
+    <h3 style="margin-top:24px">สรุปตามโมเดล</h3>
+    <div class="card table-card">
+      <table class="table">
+        <tr><th>โมเดล</th><th>ผู้ให้บริการ</th><th>คำขอ</th><th>tokens</th><th>ต้นทุน (USD)</th></tr>
+        {% for m in by_model %}
+        <tr>
+          <td><code>{{ m.m }}</code></td>
+          <td>{{ m.provider }}</td>
+          <td>{{ '{:,}'.format(m.c) }}</td>
+          <td>{{ '{:,}'.format(m.t) }}</td>
+          <td>{{ '%.4f'|format(m.cost) }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+    {% endif %}
+
+    <h3 style="margin-top:24px">คำขอล่าสุด (100 รายการ)</h3>
+    <div class="card table-card">
+      <table class="table small-tbl">
+        <tr><th>เวลา</th><th>โมเดลที่ขอ</th><th>backend จริง</th><th>คีย์</th><th>in/out tok</th><th>ms</th><th>สถานะ</th></tr>
+        {% for l in logs %}
+        <tr>
+          <td class="muted">{{ l.created_at[5:16] }}</td>
+          <td><code>{{ l.alias }}</code></td>
+          <td><code>{{ l.backend_model or '—' }}</code></td>
+          <td class="muted">{{ l.key_name or '—' }}</td>
+          <td>{{ l.prompt_tokens }}/{{ l.completion_tokens }}</td>
+          <td>{{ l.latency_ms }}</td>
+          <td>{% if l.status == 'ok' %}<span class="badge badge-ok">ok</span>{% else %}<span class="badge badge-fail">{{ l.status }}</span>{% endif %}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="muted center">ยังไม่มีประวัติการใช้งาน</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}

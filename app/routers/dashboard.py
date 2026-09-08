@@ -180,6 +180,81 @@ async def invoice_notify(request: Request, pay_id: int, note: str = Form("")):
                             quote("แจ้งชำระเงินแล้ว — รอผู้ดูแลตรวจสอบสลิปและอนุมัติ (1-24 ชม.)"), 303)
 
 
+# ---------------- โปรไฟล์สมาชิก ----------------
+
+@router.get("/profile")
+async def profile_page(request: Request):
+    user = _require(request)
+    if not user:
+        return RedirectResponse("/login", 303)
+    plan, source = usage_svc.get_active_plan(user)
+    keys_n = db.q("SELECT COUNT(*) c FROM api_keys WHERE user_id=? AND revoked=0",
+                  (user["id"],), one=True)["c"]
+    total = db.q("SELECT COUNT(*) c, COALESCE(SUM(prompt_tokens+completion_tokens),0) t "
+                 "FROM usage_logs WHERE user_id=? AND status='ok'", (user["id"],), one=True)
+    initial = (user.get("name") or user["email"])[0].upper()
+    return render(request, "dash_profile.html", plan=plan, source=source,
+                  keys_n=keys_n, total=total, initial=initial)
+
+
+@router.post("/profile")
+async def profile_update(request: Request, name: str = Form("")):
+    user = _require(request)
+    if not user:
+        return RedirectResponse("/login", 303)
+    name = name.strip()[:60]
+    if name:
+        db.x("UPDATE users SET name=? WHERE id=?", (name, user["id"]))
+    return RedirectResponse("/dashboard/profile?msg=" + quote("บันทึกโปรไฟล์แล้ว"), 303)
+
+
+@router.post("/profile/password")
+async def profile_password(request: Request, current: str = Form(""),
+                           new: str = Form(""), confirm: str = Form("")):
+    user = _require(request)
+    if not user:
+        return RedirectResponse("/login", 303)
+    plan, source = usage_svc.get_active_plan(user)
+    keys_n = db.q("SELECT COUNT(*) c FROM api_keys WHERE user_id=? AND revoked=0",
+                  (user["id"],), one=True)["c"]
+    total = db.q("SELECT COUNT(*) c, COALESCE(SUM(prompt_tokens+completion_tokens),0) t "
+                 "FROM usage_logs WHERE user_id=? AND status='ok'", (user["id"],), one=True)
+    initial = (user.get("name") or user["email"])[0].upper()
+    ctx = dict(plan=plan, source=source, keys_n=keys_n, total=total, initial=initial)
+    if not security.verify_password(current, user["password_hash"]):
+        return render(request, "dash_profile.html", status_code=400,
+                      error="รหัสผ่านปัจจุบันไม่ถูกต้อง", **ctx)
+    if len(new) < 8:
+        return render(request, "dash_profile.html", status_code=400,
+                      error="รหัสผ่านใหม่ต้องยาวอย่างน้อย 8 ตัวอักษร", **ctx)
+    if new != confirm:
+        return render(request, "dash_profile.html", status_code=400,
+                      error="รหัสผ่านใหม่ทั้งสองช่องไม่ตรงกัน", **ctx)
+    db.x("UPDATE users SET password_hash=? WHERE id=?",
+         (security.hash_password(new), user["id"]))
+    return RedirectResponse("/dashboard/profile?msg=" +
+                            quote("เปลี่ยนรหัสผ่านสำเร็จ — ใช้รหัสใหม่ตอนเข้าสู่ระบบครั้งหน้า"), 303)
+
+
+@router.get("/usage")
+async def usage_page(request: Request):
+    user = _require(request)
+    if not user:
+        return RedirectResponse("/login", 303)
+    plan, source = usage_svc.get_active_plan(user)
+    stats = usage_svc.today_stats(user["id"])
+    logs = db.q("SELECT l.*, k.name key_name FROM usage_logs l LEFT JOIN api_keys k ON k.id=l.key_id "
+                "WHERE l.user_id=? ORDER BY l.id DESC LIMIT 100", (user["id"],))
+    by_model = db.q("SELECT COALESCE(NULLIF(backend_model,''),'—') m, provider, COUNT(*) c, "
+                    "COALESCE(SUM(prompt_tokens+completion_tokens),0) t, COALESCE(SUM(cost_usd),0) cost "
+                    "FROM usage_logs WHERE user_id=? AND status='ok' "
+                    "GROUP BY backend_model, provider ORDER BY c DESC LIMIT 12", (user["id"],))
+    chart = usage_svc.daily_usage(user["id"], 14)
+    max_c = max([c["requests"] for c in chart] + [1])
+    return render(request, "dash_usage.html", plan=plan, stats=stats, logs=logs,
+                  by_model=by_model, chart=chart, max_c=max_c)
+
+
 # ---------------- Playground ----------------
 
 @router.get("/playground")

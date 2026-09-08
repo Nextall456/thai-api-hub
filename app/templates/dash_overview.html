@@ -4,7 +4,8 @@
 <section class="section">
   <div class="container">
     <div class="page-head">
-      <h1>สวัสดี, {{ user.name or user.email }} 👋</h1>
+  {% include "dash_nav.html" %}
+    <h1>สวัสดี, {{ user.name or user.email }} 👋</h1>
       {% if is_admin %}<a class="btn btn-ghost btn-sm" href="/admin">ไปแผงแอดมิน →</a>{% endif %}
     </div>
 

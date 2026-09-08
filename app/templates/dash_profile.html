@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}โปรไฟล์สมาชิก — {{ site_name }}{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    {% include "dash_nav.html" %}
+    <h1>โปรไฟล์สมาชิก</h1>
+
+    <div class="card member-card">
+      <div class="avatar">{{ initial }}</div>
+      <div>
+        <h2 style="font-size:1.3rem">{{ user.name or user.email }}</h2>
+        <div class="muted">{{ user.email }} · สมาชิกตั้งแต่ {{ user.created_at[:10] }}</div>
+        <div style="margin-top:6px">
+          {% if source == 'sub' %}<span class="badge badge-ok">{{ plan.name_th }}</span>
+          {% elif source == 'trial' %}<span class="badge badge-wait">ทดลองใช้ฟรี</span>
+          {% else %}<span class="badge badge-warn">ไม่มีแพ็กเกจ</span>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+
+    <div class="grid grid-2">
+      <div class="card">
+        <h3>ข้อมูลส่วนตัว</h3>
+        <form method="post" action="/dashboard/profile">
+          <div class="field"><label>ชื่อ-นามสกุล / ชื่อธุรกิจ</label>
+            <input type="text" name="name" maxlength="60" value="{{ user.name or '' }}"></div>
+          <div class="field"><label>อีเมล (เป็นรหัสประจำตัว แก้ไม่ได้)</label>
+            <input type="email" value="{{ user.email }}" disabled></div>
+          <button class="btn btn-primary" type="submit">บันทึก</button>
+        </form>
+      </div>
+      <div class="card">
+        <h3>เปลี่ยนรหัสผ่าน</h3>
+        <form method="post" action="/dashboard/profile/password">
+          <div class="field"><label>รหัสผ่านปัจจุบัน</label>
+            <input type="password" name="current" required></div>
+          <div class="field"><label>รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)</label>
+            <input type="password" name="new" minlength="8" required></div>
+          <div class="field"><label>ยืนยันรหัสผ่านใหม่</label>
+            <input type="password" name="confirm" minlength="8" required></div>
+          <button class="btn btn-primary" type="submit">เปลี่ยนรหัสผ่าน</button>
+        </form>
+      </div>
+    </div>
+
+    <h3 style="margin-top:28px">สรุปบัญชี</h3>
+    <div class="grid grid-3 stat-cards">
+      <div class="card"><div class="stat-label">API Keys ที่ใช้งาน</div><div class="stat-value">{{ keys_n }}</div></div>
+      <div class="card"><div class="stat-label">คำขอทั้งหมด</div><div class="stat-value">{{ '{:,}'.format(total.c) }}</div></div>
+      <div class="card"><div class="stat-label">tokens ทั้งหมด</div><div class="stat-value">{{ '{:,}'.format(total.t) }}</div></div>
+    </div>
+  </div>
+</section>
+{% endblock %}
