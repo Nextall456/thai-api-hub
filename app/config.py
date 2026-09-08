@@ -34,6 +34,12 @@ SITE_NAME = os.environ.get("SITE_NAME", "Thai API Hub")
 SITE_URL = os.environ.get("SITE_URL", f"http://localhost:{PORT}").rstrip("/")
 ADMIN_EMAILS = [e.strip().lower() for e in os.environ.get("ADMIN_EMAILS", "").split(",") if e.strip()]
 
+# Payment settings
+PAYMENT_BANK = os.environ.get("PAYMENT_BANK", "").strip()
+PAYMENT_ACCOUNT_NO = os.environ.get("PAYMENT_ACCOUNT_NO", "").strip()
+PAYMENT_ACCOUNT_NAME = os.environ.get("PAYMENT_ACCOUNT_NAME", "").strip()
+PAYMENT_QR_PATH = BASE_DIR / "static" / "payment-qr.jpg"
+
 # Telegram Bot สำหรับแจ้งเตือนแอดมิน
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
