@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}เอกสารการใช้งาน API — {{ site_name }}{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container doc">
+    <h1>เอกสารการใช้งาน API</h1>
+    <p>API ของเราใช้รูปแบบเดียวกับ <b>OpenAI Chat Completions</b> — ถ้าโค้ดคุณใช้ OpenAI อยู่แล้ว เปลี่ยนแค่สองค่า:</p>
+
+    <div class="card">
+      <div class="code-head"><span>1) ค่าที่ต้องเปลี่ยน</span></div>
+      <ul class="doc-list">
+        <li><code>base_url</code> → <code>{{ site_url }}/v1</code></li>
+        <li><code>api_key</code> → คีย์ที่ได้จากหน้าแดชบอร์ด (ขึ้นต้นด้วย <code>th-</code>)</li>
+      </ul>
+    </div>
+
+    <h2>เรียกใช้งาน (Chat Completions)</h2>
+    <div class="card">
+      <div class="code-head"><span>cURL</span><button class="btn btn-ghost btn-sm" data-copy>คัดลอก</button></div>
+<pre>curl {{ site_url }}/v1/chat/completions \
+  -H "Authorization: Bearer th-ใส่คีย์ของคุณ" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "thai-hub/auto",
+    "messages": [
+      {"role": "system", "content": "คุณเป็นผู้ช่วยพูดไทย"},
+      {"role": "user", "content": "สรุปข่าว AI วันนี้ 3 ข้อ"}
+    ],
+    "temperature": 0.7
+  }'</pre>
+    </div>
+
+    <div class="card">
+      <div class="code-head"><span>Python (openai SDK)</span><button class="btn btn-ghost btn-sm" data-copy>คัดลอก</button></div>
+<pre>from openai import OpenAI
+
+client = OpenAI(
+    base_url="{{ site_url }}/v1",
+    api_key="th-ใส่คีย์ของคุณ",
+)
+
+resp = client.chat.completions.create(
+    model="thai-hub/auto",
+    messages=[{"role": "user", "content": "เขียนแคปชั่นขายกาแฟ"}],
+)
+print(resp.choices[0].message.content)</pre>
+    </div>
+
+    <div class="card">
+      <div class="code-head"><span>Node.js (openai SDK)</span><button class="btn btn-ghost btn-sm" data-copy>คัดลอก</button></div>
+<pre>import OpenAI from "openai";
+
+const client = new OpenAI({
+  baseURL: "{{ site_url }}/v1",
+  apiKey: "th-ใส่คีย์ของคุณ",
+});
+
+const resp = await client.chat.completions.create({
+  model: "thai-hub/auto",
+  messages: [{ role: "user", content: "สรุปงบของฉันเป็น bullet" }],
+});
+console.log(resp.choices[0].message.content);</pre>
+    </div>
+
+    <h2>แบบสตรีม (เห็นข้อความทยอยไหล)</h2>
+    <p>ใส่ <code>"stream": true</code> ระบบจะส่งแบบ SSE เหมือน OpenAI — ตัวอย่าง cURL:</p>
+    <div class="card">
+      <div class="code-head"><span>Streaming</span><button class="btn btn-ghost btn-sm" data-copy>คัดลอก</button></div>
+<pre>curl -N {{ site_url }}/v1/chat/completions \
+  -H "Authorization: Bearer th-ใส่คีย์ของคุณ" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"thai-hub/auto","stream":true,"messages":[{"role":"user","content":"เล่าตลกสั้นๆ"}]}'</pre>
+    </div>
+
+    <h2>รายชื่อโมเดล (alias)</h2>
+    <div class="card table-card">
+      <table class="table">
+        <tr><th>alias</th><th>คำอธิบาย</th></tr>
+        {% for alias, desc in alias_info.items() %}
+        <tr><td><code>{{ alias }}</code></td><td>{{ desc }}</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+    <p class="muted">แพ็กเกจโปรขึ้นไป ส่งชื่อโมเดลตรงจาก OpenRouter ได้ เช่น <code>deepseek/deepseek-chat-v3.1</code> — ดูรายการทั้งหมดที่ endpoint <code>GET /v1/models</code></p>
+
+    <h2>โควตาแต่ละแพ็กเกจ</h2>
+    <div class="card table-card">
+      <table class="table">
+        <tr><th>แพ็กเกจ</th><th>คำขอ/วัน</th><th>tokens/เดือน</th><th>คำขอ/นาที</th><th>ราคา</th></tr>
+        {% for p in plans %}
+        <tr>
+          <td>{{ p.name_th }}</td>
+          <td>{{ '{:,}'.format(p.daily_requests) }}</td>
+          <td>{{ '{:,}'.format(p.monthly_tokens) }}</td>
+          <td>{{ p.rpm }}</td>
+          <td>{% if p.price_month_thb == 0 %}ฟรี{% else %}฿{{ '%.0f'|format(p.price_month_thb) }}/ด. · ฿{{ '%.0f'|format(p.price_year_thb) }}/ปี{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    <h2>รหัส error ที่พบบ่อย</h2>
+    <div class="card table-card">
+      <table class="table">
+        <tr><th>รหัส</th><th>ความหมาย</th></tr>
+        <tr><td><code>401</code></td><td>API key ไม่ถูกต้องหรือถูกยกเลิก</td></tr>
+        <tr><td><code>402</code></td><td>ยังไม่มีแพ็กเกจ/หมดอายุ — ไปต่ออายุที่หน้า Billing</td></tr>
+        <tr><td><code>403</code></td><td>แพ็กเกจไม่รองรับโมเดลนี้</td></tr>
+        <tr><td><code>429</code></td><td>เกินโควตาวัน/เดือน หรือเรียกถี่เกิน (rate limit)</td></tr>
+        <tr><td><code>502</code></td><td>backend ทุกเส้นทางล้มเหลวชั่วคราว — ลองใหม่ได้</td></tr>
+      </table>
+    </div>
+    {% if not has_or_key %}
+    <p class="warn-note">⚠ ผู้ดูแลระบบยังไม่ได้ตั้งค่า OPENROUTER_API_KEY — ขณะนี้ใช้ได้เฉพาะเส้นทาง <code>thai-hub/local</code> และ <code>thai-hub/auto</code> (ส่วน local)</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

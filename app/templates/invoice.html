@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}ใบแจ้งชำระเงิน {{ pay.ref_code }} — {{ site_name }}{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container invoice-wrap">
+    <div class="card invoice-card">
+      <h1>ใบแจ้งชำระเงิน</h1>
+      <table class="invoice-tbl">
+        <tr><td class="muted">รหัสอ้างอิง</td><td><b><code>{{ pay.ref_code }}</code></b></td></tr>
+        <tr><td class="muted">แพ็กเกจ</td><td>{{ pay.plan_name }} ({{ pay.billing_period == 'year' and 'รายปี' or 'รายเดือน' }})</td></tr>
+        <tr><td class="muted">ยอดที่ต้องชำระ</td><td class="amount-big">฿{{ '%.2f'|format(pay.amount_thb) }}</td></tr>
+        <tr><td class="muted">สถานะ</td>
+          <td>{% if pay.status == 'pending' %}{% if pay.paid_at %}<span class="badge badge-wait">แจ้งชำระแล้ว — รอตรวจสอบ</span>{% else %}<span class="badge badge-warn">รอการชำระ</span>{% endif %}
+              {% elif pay.status == 'verified' %}<span class="badge badge-ok">ชำระสำเร็จ — เปิดใช้งานแล้ว</span>
+              {% else %}<span class="badge badge-fail">ถูกปฏิเสธ — ติดต่อผู้ดูแล</span>{% endif %}
+          </td></tr>
+      </table>
+
+      {% if pay.status == 'pending' and qr_uri %}
+        <div class="bank-box">
+          <table class="invoice-tbl">
+            <tr><td class="muted">ธนาคาร</td><td><b>{{ bank }}</b></td></tr>
+            <tr><td class="muted">เลขที่บัญชี</td><td><b class="mono">{{ acct_no }}</b></td></tr>
+            <tr><td class="muted">ชื่อบัญชี</td><td>{{ acct_name }}</td></tr>
+          </table>
+        </div>
+        <div class="qr-box">
+          <img src="{{ qr_uri }}" alt="QR บัญชีรับเงิน">
+          <p>สแกน QR นี้เพื่อโอน หรือโอนเข้าบัญชีด้านบน<br>ยอด <b>฿{{ '%.2f'|format(pay.amount_thb) }}</b></p>
+        </div>
+        <ol class="pay-steps">
+          <li>สแกน QR ด้านบนด้วยแอปธนาคาร <b>หรือ</b> โอนเข้าบัญชี {{ bank }} ยอด <b>พอดี ฿{{ '%.2f'|format(pay.amount_thb) }}</b></li>
+          <li>กดปุ่ม "แจ้งชำระเงินแล้ว" ด้านล่าง พร้อมระบุเวลาที่โอน</li>
+          <li>รอผู้ดูแลตรวจสอบ (ปกติภายใน 1-24 ชม.) ระบบจะเปิดแพ็กเกจให้อัตโนมัติ</li>
+        </ol>
+        <form method="post" action="/dashboard/billing/invoice/{{ pay.id }}/notify" class="notify-form">
+          <div class="field"><label>เวลา/รายละเอียดที่โอน เช่น "โอน 14:30 น. จาก Kbank"</label>
+            <input type="text" name="note" maxlength="200" value="{{ pay.note }}"></div>
+          <button class="btn btn-primary btn-block" type="submit">✅ แจ้งชำระเงินแล้ว</button>
+        </form>
+      {% elif pay.status == 'pending' and not pay_ready %}
+        <div class="warn-note">ระบบยังไม่เปิดรับชำระเงิน (ยังไม่มีรูป QR ที่ app/static/payment-qr.jpg) — ติดต่อผู้ดูแลได้</div>
+      {% elif pay.status == 'verified' %}
+        <div class="success-box">ชำระเงินเรียบร้อย แพ็กเกจเปิดใช้งานแล้ว — เริ่มยิง API ได้เลย! 🎉</div>
+      {% endif %}
+      <p style="margin-top:16px"><a href="/dashboard/billing">← กลับหน้าแพ็กเกจ</a></p>
+    </div>
+  </div>
+</section>
+{% endblock %}

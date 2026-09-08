@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}แผงแอดมิน — {{ site_name }}{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="page-head">
+      <h1>แผงผู้ดูแลระบบ</h1>
+      <a class="btn btn-ghost btn-sm" href="/admin/users">จัดการผู้ใช้ →</a>
+    </div>
+
+    {% if not has_or_key %}
+    <div class="warn-note">⚠ ยังไม่ได้ใส่ OPENROUTER_API_KEY ใน .env — ลูกค้าจะใช้ได้เฉพาะเส้นทาง local</div>
+    {% endif %}
+
+    <div class="grid grid-5 stat-cards">
+      <div class="card"><div class="stat-label">ผู้ใช้ทั้งหมด</div><div class="stat-value">{{ stats.users }}</div></div>
+      <div class="card"><div class="stat-label">แพ็กเกจใช้งานอยู่</div><div class="stat-value">{{ stats.active_subs }}</div></div>
+      <div class="card"><div class="stat-label">รายได้รวม (฿)</div><div class="stat-value">{{ '{:,.0f}'.format(stats.revenue) }}</div></div>
+      <div class="card"><div class="stat-label">คำขอ 24 ชม.</div><div class="stat-value">{{ '{:,}'.format(stats.req24) }}</div></div>
+      <div class="card"><div class="stat-label">พลาด 24 ชม.</div><div class="stat-value {% if stats.fail24 %}warn-text{% endif %}">{{ stats.fail24 }}</div></div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <span class="stat-label">โมเดลในเครื่องที่พร้อมใช้ (Ollama):</span>
+      {% for m in local_models %}<span class="chip">{{ m }}</span>{% else %}<span class="muted">ไม่พบ — เช็คว่า Ollama รันอยู่</span>{% endfor %}
+    </div>
+
+    <h2 style="margin-top:32px">รออนุมัติการชำระเงิน ({{ pending | length }})</h2>
+    <div class="card table-card">
+      <table class="table">
+        <tr><th>อ้างอิง</th><th>ลูกค้า</th><th>แพ็กเกจ</th><th>ระยะ</th><th>ยอด</th><th>แจ้งไว้</th><th>จัดการ</th></tr>
+        {% for pay in pending %}
+        <tr>
+          <td><code>{{ pay.ref_code }}</code></td>
+          <td>{{ pay.email }}</td>
+          <td>{{ pay.plan_name }}</td>
+          <td>{{ pay.billing_period == 'year' and 'รายปี' or 'รายเดือน' }}</td>
+          <td><b>฿{{ '%.2f'|format(pay.amount_thb) }}</b></td>
+          <td class="muted">{{ pay.note or '—' }}<br><small>{{ pay.paid_at or '' }}</small></td>
+          <td class="pay-actions">
+            <form method="post" action="/admin/payments/{{ pay.id }}/verify">
+              <button class="btn btn-primary btn-sm" type="submit">✓ อนุมัติ</button>
+            </form>
+            <form method="post" action="/admin/payments/{{ pay.id }}/reject" onsubmit="return confirm('ปฏิเสธบิลนี้?')">
+              <button class="btn btn-danger btn-sm" type="submit">✗ ปฏิเสธ</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="muted center">ไม่มีรายการรออนุมัติ 🎉</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    <h2 style="margin-top:32px">การใช้งานล่าสุด 25 รายการ</h2>
+    <div class="card table-card">
+      <table class="table small-tbl">
+        <tr><th>เวลา</th><th>ผู้ใช้</th><th>alias</th><th>backend</th><th>in/out tok</th><th>ms</th><th>สถานะ</th></tr>
+        {% for l in recent %}
+        <tr>
+          <td class="muted">{{ l.created_at[11:19] }}</td>
+          <td>{{ l.email }}</td>
+          <td><code>{{ l.alias }}</code></td>
+          <td><code>{{ l.provider }}:{{ l.backend_model }}</code></td>
+          <td>{{ l.prompt_tokens }}/{{ l.completion_tokens }}</td>
+          <td>{{ l.latency_ms }}</td>
+          <td>{% if l.status == 'ok' %}<span class="badge badge-ok">ok</span>{% else %}<span class="badge badge-fail">{{ l.status }}</span>{% endif %}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="muted center">ยังไม่มีการใช้งาน</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}

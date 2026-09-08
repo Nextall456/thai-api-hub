@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}แดชบอร์ด — {{ site_name }}{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="page-head">
+      <h1>สวัสดี, {{ user.name or user.email }} 👋</h1>
+      {% if is_admin %}<a class="btn btn-ghost btn-sm" href="/admin">ไปแผงแอดมิน →</a>{% endif %}
+    </div>
+
+    {% if is_admin and not has_or_key %}
+    <div class="warn-note">⚠ ยังไม่ได้ใส่ <code>OPENROUTER_API_KEY</code> ในไฟล์ .env — ตอนนี้ลูกค้าใช้ได้เฉพาะเส้นทางโมเดลในเครื่อง (thai-hub/local และ auto ส่วน local)</div>
+    {% endif %}
+
+    {% if not plan %}
+    <div class="card cta-card">
+      <h3>ยังไม่มีแพ็กเกจที่ใช้งานได้</h3>
+      <p class="muted">ทดลองใช้ฟรีอาจหมดอายุแล้ว — เลือกแพ็กเกจรายเดือน/รายปี เปิดใช้งานต่อได้เลย</p>
+      <a class="btn btn-primary" href="/dashboard/billing">ดูแพ็กเกจ & สมัคร</a>
+    </div>
+    {% endif %}
+
+    <div class="grid grid-4 stat-cards">
+      <div class="card">
+        <div class="stat-label">แพ็กเกจปัจจุบัน</div>
+        {% if plan %}
+          <div class="stat-value">{{ plan.name_th }}</div>
+          {% if source == 'sub' and sub %}<div class="muted">หมดอายุ {{ sub.ends_at }}</div>
+          {% elif source == 'trial' %}<div class="muted">ทดลองใช้ เหลือ {{ trial_left }} วัน</div>{% endif %}
+        {% else %}<div class="stat-value muted">—</div><div class="muted">ไม่มีแพ็กเกจ</div>{% endif %}
+      </div>
+      <div class="card">
+        <div class="stat-label">คำขอวันนี้</div>
+        <div class="stat-value">{{ '{:,}'.format(stats.today_requests) }}</div>
+        {% if plan %}<div class="meter"><div class="meter-fill" style="width: {{ [100, (stats.today_requests / plan.daily_requests * 100) | round(0, 'floor') | int, 0] | min }}%"></div></div>
+        <div class="muted">โควตา {{ '{:,}'.format(plan.daily_requests) }}/วัน</div>{% endif %}
+      </div>
+      <div class="card">
+        <div class="stat-label">tokens เดือนนี้</div>
+        <div class="stat-value">{{ '{:,}'.format(stats.month_tokens) }}</div>
+        {% if plan %}<div class="meter"><div class="meter-fill" style="width: {{ [100, (stats.month_tokens / plan.monthly_tokens * 100) | round(0, 'floor') | int, 0] | min }}%"></div></div>
+        <div class="muted">โควตา {{ '{:,}'.format(plan.monthly_tokens) }}</div>{% endif %}
+      </div>
+      <div class="card">
+        <div class="stat-label">API Keys ที่ใช้งาน</div>
+        <div class="stat-value">{{ keys | length }}</div>
+        <a class="muted" href="/dashboard/keys">จัดการคีย์ →</a>
+      </div>
+    </div>
+
+    <div class="grid grid-2" style="margin-top:24px">
+      <div class="card">
+        <h3>การใช้งาน 14 วันล่าสุด</h3>
+        <div class="bars">
+          {% for c in chart %}
+          <div class="bar-col" title="{{ c.date }}: {{ c.requests }} คำขอ, {{ '{:,}'.format(c.tokens) }} tokens">
+            <div class="bar" style="height: {{ (c.requests / max_c * 100) | round(0, 'floor') | int }}%"></div>
+            <span class="bar-label">{{ c.date[8:] }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="card">
+        <h3>เริ่มใช้งานด่วน</h3>
+        <div class="code">
+          <div class="code-head"><span>พร้อมคีย์ของคุณ</span><button class="btn btn-ghost btn-sm" data-copy>คัดลอก</button></div>
+<pre>curl {{ site_url }}/v1/chat/completions \
+  -H "Authorization: Bearer th-คีย์ของคุณ" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"thai-hub/auto","messages":[{"role":"user","content":"สวัสดี"}]}'</pre>
+        </div>
+        <p class="muted">ลองคุยกับ AI ได้เลยที่ <a href="/dashboard/playground">ห้องทดลอง →</a> หรืออ่าน <a href="/docs-api">เอกสารเต็ม</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

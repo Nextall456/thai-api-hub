@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}ผู้ใช้ทั้งหมด — {{ site_name }}{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="page-head"><h1>ผู้ใช้ทั้งหมด</h1><a class="btn btn-ghost btn-sm" href="/admin">← กลับแผงแอดมิน</a></div>
+    <div class="card table-card">
+      <table class="table">
+        <tr><th>ID</th><th>อีเมล</th><th>ชื่อ</th><th>สิทธิ์</th><th>แพ็กเกจ</th><th>หมดอายุ</th><th>สมัครเมื่อ</th><th>สถานะ</th><th></th></tr>
+        {% for u in users %}
+        <tr>
+          <td>{{ u.id }}</td>
+          <td>{{ u.email }}</td>
+          <td>{{ u.name or '—' }}</td>
+          <td>{% if u.role == 'admin' %}<span class="badge badge-wait">admin</span>{% else %}<span class="muted">user</span>{% endif %}</td>
+          <td>{{ u.sub_plan or '—' }}</td>
+          <td class="muted">{{ u.sub_end or '—' }}</td>
+          <td class="muted">{{ u.created_at[:10] }}</td>
+          <td>{% if u.is_active %}<span class="badge badge-ok">ปกติ</span>{% else %}<span class="badge badge-fail">ระงับ</span>{% endif %}</td>
+          <td>
+            {% if u.role != 'admin' %}
+            <form method="post" action="/admin/users/{{ u.id }}/toggle">
+              <button class="btn btn-ghost btn-sm" type="submit">{{ u.is_active and 'ระงับ' or 'ปลดระงับ' }}</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}

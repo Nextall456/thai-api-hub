@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}แพ็กเกจ & การชำระเงิน — {{ site_name }}{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <h1>แพ็กเกจ & การชำระเงิน</h1>
+
+    {% if active_sub %}
+    <div class="card sub-active">
+      <div>
+        <div class="stat-label">แพ็กเกจที่ใช้งานอยู่</div>
+        <h3 style="margin:4px 0">{{ active_sub.plan_name }}</h3>
+        <div class="muted">หมดอายุ: {{ active_sub.ends_at }} ({{ active_sub.billing_period == 'year' and 'รายปี' or 'รายเดือน' }})</div>
+      </div>
+      <span class="badge badge-ok">กำลังใช้งาน</span>
+    </div>
+    {% endif %}
+
+    {% if pending %}
+    <h3 style="margin-top:24px">ใบแจ้งหนี้รอชำระ/รอตรวจสอบ</h3>
+    <div class="card table-card">
+      <table class="table">
+        <tr><th>อ้างอิง</th><th>แพ็กเกจ</th><th>ระยะ</th><th>ยอด</th><th>สถานะ</th><th></th></tr>
+        {% for pay in pending %}
+        <tr>
+          <td><code>{{ pay.ref_code }}</code></td>
+          <td>{{ pay.plan_name }}</td>
+          <td>{{ pay.billing_period == 'year' and 'รายปี' or 'รายเดือน' }}</td>
+          <td>฿{{ '%.2f'|format(pay.amount_thb) }}</td>
+          <td>{% if pay.paid_at %}<span class="badge badge-wait">รอตรวจสอบ</span>{% else %}<span class="badge badge-warn">รอชำระ</span>{% endif %}</td>
+          <td><a class="btn btn-primary btn-sm" href="/dashboard/billing/invoice/{{ pay.id }}">ไปที่บิล →</a></td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+    {% endif %}
+
+    <h2 style="margin-top:32px">เลือกแพ็กเกจ</h2>
+    <div class="grid grid-3 pricing">
+      {% for p in plans %}
+      <div class="card price-card {% if p.code == 'pro' %}popular{% endif %}">
+        {% if p.code == 'pro' %}<div class="pop-badge">ยอดนิยม</div>{% endif %}
+        <h3>{{ p.name_th }}</h3>
+        <div class="price"><span class="amount">฿{{ '%.0f'|format(p.price_month_thb) }}</span><span class="period">/เดือน</span></div>
+        <div class="yearly-note">รายปี ฿{{ '%.0f'|format(p.price_year_thb) }} (ประหยัด ~2 เดือน)</div>
+        <ul class="features">{% for f in p.features_th.split('|') %}<li>{{ f }}</li>{% endfor %}</ul>
+        <form method="post" action="/dashboard/billing/subscribe" class="pay-row">
+          <input type="hidden" name="plan_code" value="{{ p.code }}">
+          <button class="btn btn-ghost" name="period" value="month" type="submit">รายเดือน</button>
+          <button class="btn btn-primary" name="period" value="year" type="submit">รายปี (ประหยัดกว่า)</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if not pay_ready %}
+    <div class="warn-note" style="margin-top:20px">⚠ ยังไม่มีรูป QR รับเงิน (วางไว้ที่ app/static/payment-qr.jpg) — ลูกค้าจะยังเห็นแค่เลขบัญชี</div>
+    {% endif %}
+
+    {% if history %}
+    <h2 style="margin-top:32px">ประวัติการชำระเงิน</h2>
+    <div class="card table-card">
+      <table class="table">
+        <tr><th>อ้างอิง</th><th>แพ็กเกจ</th><th>ยอด</th><th>สถานะ</th><th>เวลา</th></tr>
+        {% for pay in history %}
+        <tr>
+          <td><code>{{ pay.ref_code }}</code></td>
+          <td>{{ pay.plan_name }} ({{ pay.billing_period == 'year' and 'ปี' or 'ด.' }})</td>
+          <td>฿{{ '%.2f'|format(pay.amount_thb) }}</td>
+          <td>{% if pay.status == 'verified' %}<span class="badge badge-ok">ชำระสำเร็จ</span>{% else %}<span class="badge badge-fail">ปฏิเสธ</span>{% endif %}</td>
+          <td class="muted">{{ pay.verified_at }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

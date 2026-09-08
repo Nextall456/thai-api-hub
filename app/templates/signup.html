@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}สมัครสมาชิก — {{ site_name }}{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="form-card card">
+    <h1>สมัครสมาชิกฟรี</h1>
+    <p class="muted">รับสิทธิ์ทดลองใช้ 7 วัน — สร้าง API Key แล้วเรียกใช้งานได้ทันที</p>
+    {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+    <form method="post" action="/signup">
+      <div class="field"><label>ชื่อ-นามสกุล / ชื่อธุรกิจ</label><input type="text" name="name" autofocus></div>
+      <div class="field"><label>อีเมล</label><input type="email" name="email" required></div>
+      <div class="field"><label>รหัสผ่าน (อย่างน้อย 8 ตัวอักษร)</label><input type="password" name="password" minlength="8" required></div>
+      <button class="btn btn-primary btn-block" type="submit">สมัครสมาชิก</button>
+    </form>
+    <p class="muted center" style="margin-top:16px">มีบัญชีแล้ว? <a href="/login">เข้าสู่ระบบ</a></p>
+  </div>
+</section>
+{% endblock %}

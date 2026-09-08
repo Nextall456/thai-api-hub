@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <div class="container">
+    <div class="badge-line"><span class="badge">🇹🇭 เซิร์ฟเวอร์อยู่ในไทย</span><span class="badge">ทดลองฟรี 7 วัน ไม่ต้องใช้บัตร</span></div>
+    <h1>ยิงงาน AI ผ่าน <span class="grad">API เดียว</span><br>เริ่มต้นหลักร้อยต่อเดือน</h1>
+    <p class="lead">Thai API Hub คือ API Gateway ที่เข้ากันได้ 100% กับ OpenAI SDK — ด้านหลังสลับให้อัตโนมัติระหว่าง
+    <b>AI ในเครื่องเซิร์ฟเวอร์ (ฟรี)</b>, <b>โมเดลฟรีคุณภาพสูง</b> และ <b>โมเดลราคาประหยัด</b> จาก OpenRouter
+    เจ็บครั้งเดียวย้ายมาใช้งานได้เลย แพงน้อยกว่าหลายเท่า</p>
+    <div class="cta-row">
+      <a class="btn btn-primary btn-lg" href="/signup">สมัครทดลองใช้ฟรี</a>
+      <a class="btn btn-ghost btn-lg" href="/docs-api">ดูเอกสาร API</a>
+    </div>
+    <div class="code card">
+      <div class="code-head"><span>เริ่มใช้งานใน 30 วินาที</span><button class="btn btn-ghost btn-sm" data-copy>คัดลอก</button></div>
+<pre>curl {{ site_url }}/v1/chat/completions \
+  -H "Authorization: Bearer th-ใส่คีย์ของคุณ" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"thai-hub/auto","messages":[{"role":"user","content":"สวัสดี แนะนำตัวหน่อย"}]}'</pre>
+    </div>
+  </div>
+</section>
+
+<section id="features" class="section">
+  <div class="container">
+    <h2>จุดเด่นที่ลูกค้าได้ประโยชน์จริง</h2>
+    <div class="grid grid-3">
+      <div class="card"><div class="icon">🔌</div><h3>เข้ากันได้กับ OpenAI 100%</h3><p>เปลี่ยนแค่ <code>base_url</code> กับ API key ในโค้ดเดิมของคุณ ใช้ได้กับ Python, Node.js, Go, PHP และเครื่องมืออย่าง LangChain / n8n ทันที</p></div>
+      <div class="card"><div class="icon">🔄</div><h3>สลับโมเดลอัตโนมัติ (Failover)</h3><p>เซิร์ฟเวอร์สลับไปให้เองตามลำดับ: AI ในเครื่อง → โมเดลฟรี → โมเดลราคาถูก ไม่มีงานค้างเพราะโมเดลไหนล่มหรือติด rate limit</p></div>
+      <div class="card"><div class="icon">🏠</div><h3>Local AI ในเครื่อง ฟรีไม่อั้น</h3><p>เรารันโมเดลโอเพนซอร์ส (Qwen 2.5) บนเซิร์ฟเวอร์ของเราเอง งานทั่วไปใช้เส้นทางนี้ได้ฟรี ข้อมูลไม่ออกจากบ้าน</p></div>
+      <div class="card"><div class="icon">💸</div><h3>ราคาคนไทยจ่ายไหว</h3><p>เริ่มต้น ฿199/เดือน หรือจ่ายรายปีลดเพิ่ม เทียบกับค่าโมเดลรายใหญ่ที่พุ่งเป็นพันต่อเดือนสำหรับงานหนัก</p></div>
+      <div class="card"><div class="icon">📊</div><h3>แดชบอร์ดภาษาไทย</h3><p>เห็นการใช้งานแบบเรียลไทม์ สร้าง/ยกเลิก API key ได้เอง โควตาเหลือเท่าไร ใช้โมเดลอะไร ค่าใช้จ่ายตกเท่าไร โปร่งใสหมด</p></div>
+      <div class="card"><div class="icon">📱</div><h3>จ่ายง่ายด้วย QR / โอนธนาคาร</h3><p>สแกน QR หรือโอนเข้าบัญชีธนาคารได้ทุกแบงก์ กดแจ้งชำระ รออนุมัติไม่นาน เปิดใช้งานทันทีที่ตรวจสอบเสร็จ</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="container">
+    <h2>ใช้งาน 4 ขั้น จบ</h2>
+    <div class="grid grid-4">
+      <div class="step"><b>1</b><h3>สมัครสมาชิก</h3><p>อีเมล + รหัสผ่าน รับสิทธิ์ทดลองฟรี 7 วันทันที</p></div>
+      <div class="step"><b>2</b><h3>สร้าง API Key</h3><p>สร้างได้หลายคีย์ ตั้งชื่อแยกโปรเจกต์ ยกเลิกเองได้</p></div>
+      <div class="step"><b>3</b><h3>ชี้ base_url มาที่เรา</h3><p>เปลี่ยนสองบรรทัดในโค้ดเดิม จบ</p></div>
+      <div class="step"><b>4</b><h3>จ่ายค่าบริการ</h3><p>สแกน PromptPay เลือกรายเดือนหรือรายปี</p></div>
+    </div>
+
+    <h2 style="margin-top:48px">เลือกเส้นทางโมเดลด้วยชื่อเดียว</h2>
+    <div class="card table-card">
+      <table class="table">
+        <tr><th>ชื่อโมเดล (alias)</th><th>ความหมาย</th></tr>
+        {% for alias, desc in alias_info.items() %}
+        <tr><td><code>{{ alias }}</code></td><td>{{ desc }}</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="pricing" class="section">
+  <div class="container">
+    <h2>แพ็กเกจราคา</h2>
+    <p class="muted center">ทุกแพ็กเกจใช้ endpoint เดียวกัน ต่างกันที่โควตาและโมเดลที่เข้าถึงได้ — ทดลองฟรี 7 วันก่อนตัดสินใจ</p>
+    <div class="grid grid-3 pricing">
+      {% for p in plans %}
+      <div class="card price-card {% if p.code == 'pro' %}popular{% endif %}">
+        {% if p.code == 'pro' %}<div class="pop-badge">ยอดนิยม</div>{% endif %}
+        <h3>{{ p.name_th }}</h3>
+        <div class="price">
+          <span class="amount" data-month="{{ '%.0f'|format(p.price_month_thb) }}" data-year="{{ '%.0f'|format(p.price_year_thb) }}">฿{{ '%.0f'|format(p.price_month_thb) }}</span>
+          <span class="period">/เดือน</span>
+        </div>
+        <div class="yearly-note">หรือ ฿{{ '%.0f'|format(p.price_year_thb) }}/ปี — ประหยัด ~2 เดือน</div>
+        <ul class="features">
+          {% for f in p.features_th.split('|') %}<li>{{ f }}</li>{% endfor %}
+        </ul>
+        <a class="btn btn-primary btn-block" href="/signup">เริ่มใช้งาน</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="container">
+    <h2>คำถามที่พบบ่อย</h2>
+    <div class="faq">
+      <details><summary>ต่างจากไปสมัคร OpenAI/Anthropic เองยังไง?</summary><p>ไม่ต้องสมัครบัตรต่างประเทศ ไม่ต้องจ่ายดอลลาร์ ไม่ต้องดูแลหลายบัญชี — จ่ายบาทเดียวจบ และระบบเลือกโมเดลที่ถูกที่สุดที่งานออกมาดีให้เอง</p></details>
+      <details><summary>โมเดลอะไรบ้าง?</summary><p>เส้นทางฟรีใช้ตัวเก่งๆ อย่าง Llama 3.3 70B, DeepSeek V3, Qwen3, Gemma 3 ส่วนเส้นทางประหยัดใช้ DeepSeek V3.1, Gemini Flash, GPT-4o-mini และแพ็กเกจโปรขึ้นไปเลือกโมเดลจาก OpenRouter ได้เองทุกตัว</p></details>
+      <details><summary>"AI ในเครื่อง" แปลว่าอะไร?</summary><p>เรารันโมเดลโอเพนซอร์สบนเซิร์ฟเวอร์ของเราเอง คำขอของคุณไม่ต้องออกไปหาบริการภายนอก — เหมาะกับงานทั่วไป ช่วยประหยัดค่าโมเดลได้มหาศาล</p></details>
+      <details><summary>จ่ายเงินยังไง? ยกเลิกได้ไหม?</summary><p>สแกน QR หรือโอนเข้าบัญชีธนาคารจากหน้าบิลในแดชบอร์ด กดแจ้งชำระ แล้วรออนุมัติ หมดสัญญาแล้วไม่ต่อก็จบ ไม่มีบัตรถูกตัดอัตโนมัติ</p></details>
+      <details><summary>โควตาเกินแล้วเกิดอะไรขึ้น?</summary><p>API จะตอบ 429 พร้อมข้อความภาษาไทยบอกเหตุผล คุณต่ออายุหรืออัปเกรดแพ็กเกจได้ทันทีจากหน้า Billing</p></details>
+    </div>
+    <div class="center" style="margin-top:40px">
+      <a class="btn btn-primary btn-lg" href="/signup">เริ่มใช้ฟรี 7 วัน</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

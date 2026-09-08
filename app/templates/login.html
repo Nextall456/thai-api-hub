@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}เข้าสู่ระบบ — {{ site_name }}{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="form-card card">
+    <h1>เข้าสู่ระบบ</h1>
+    {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+    <form method="post" action="/login">
+      <div class="field"><label>อีเมล</label><input type="email" name="email" required autofocus></div>
+      <div class="field"><label>รหัสผ่าน</label><input type="password" name="password" required></div>
+      <button class="btn btn-primary btn-block" type="submit">เข้าสู่ระบบ</button>
+    </form>
+    <p class="muted center" style="margin-top:16px">ยังไม่มีบัญชี? <a href="/signup">สมัครฟรี ทดลองใช้ 7 วัน</a></p>
+  </div>
+</section>
+{% endblock %}

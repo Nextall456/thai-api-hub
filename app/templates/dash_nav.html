@@ -1,0 +1,8 @@
+<div class="dash-subnav">
+  <a href="/dashboard" class="{{ 'active' if request.url.path in ('/dashboard', '/dashboard/') }}">ภาพรวม</a>
+  <a href="/dashboard/keys" class="{{ 'active' if request.url.path.startswith('/dashboard/keys') }}">API Keys</a>
+  <a href="/dashboard/usage" class="{{ 'active' if request.url.path.startswith('/dashboard/usage') }}">การใช้งาน</a>
+  <a href="/dashboard/billing" class="{{ 'active' if request.url.path.startswith('/dashboard/billing') }}">แพ็กเกจ & บิล</a>
+  <a href="/dashboard/playground" class="{{ 'active' if request.url.path.startswith('/dashboard/playground') }}">ห้องทดลอง</a>
+  <a href="/dashboard/profile" class="{{ 'active' if request.url.path.startswith('/dashboard/profile') }}">โปรไฟล์</a>
+</div>

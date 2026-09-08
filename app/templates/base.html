@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ site_name }} — AI API ราคาประหยัดสำหรับคนไทย{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="/"><span class="brand-dot"></span>Thai&nbsp;<em>API</em>&nbsp;Hub</a>
+    <div class="nav-links">
+      <a href="/#features">จุดเด่น</a>
+      <a href="/#pricing">ราคา</a>
+      <a href="/docs-api">เอกสาร API</a>
+      {% if user %}
+        <a href="/dashboard">แดชบอร์ด</a>
+        {% if user.role == 'admin' %}<a href="/admin" class="admin-link">แอดมิน</a>{% endif %}
+        <a href="/logout" class="btn btn-ghost btn-sm">ออกจากระบบ</a>
+      {% else %}
+        <a href="/login">เข้าสู่ระบบ</a>
+        <a href="/signup" class="btn btn-primary btn-sm">สมัครฟรี</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+{% if msg %}<div class="flash container">{{ msg }}</div>{% endif %}
+{% block content %}{% endblock %}
+<footer>
+  <div class="container footer-inner">
+    <div>© 2026 {{ site_name }} — API Gateway + Local AI รันบนเซิร์ฟเวอร์ของเราเอง</div>
+    <div class="muted">เข้ากันได้กับ OpenAI SDK ทุกภาษา · ชำระเงินผ่าน PromptPay</div>
+  </div>
+</footer>
+<script src="/static/app.js"></script>
+</body>
+</html>

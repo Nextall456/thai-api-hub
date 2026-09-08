@@ -1,0 +1,7 @@
+"""จุดรันเซิร์ฟเวอร์: อ่าน HOST/PORT จาก .env"""
+import uvicorn
+
+from app import config
+
+if __name__ == "__main__":
+    uvicorn.run("app.main:app", host=config.HOST, port=config.PORT, log_level="info")

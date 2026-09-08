@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}API Keys — {{ site_name }}{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <h1>API Keys</h1>
+    <p class="muted">แต่ละคีย์ใช้โควตาของแพ็กเกจร่วมกัน ตั้งชื่อแยกตามโปรเจกต์เพื่อดูการใช้งานได้ง่ายขึ้น</p>
+
+    {% if new_key %}
+    <div class="key-reveal">
+      <b>🔑 คีย์ใหม่ของคุณ (คัดลอกตอนนี้ — เราจะไม่แสดงอีก):</b>
+      <div class="key-row"><code id="new-key">{{ new_key }}</code>
+        <button class="btn btn-primary btn-sm" data-copy-target="new-key">คัดลอกคีย์</button></div>
+    </div>
+    {% endif %}
+
+    <div class="card form-inline">
+      <form method="post" action="/dashboard/keys">
+        <input type="text" name="name" placeholder="ชื่อคีย์ เช่น my-app" maxlength="40">
+        <button class="btn btn-primary" type="submit">+ สร้างคีย์ใหม่</button>
+      </form>
+    </div>
+
+    <div class="card table-card">
+      <table class="table">
+        <tr><th>คีย์</th><th>ชื่อ</th><th>สร้างเมื่อ</th><th>ใช้ล่าสุด</th><th></th></tr>
+        {% for k in keys %}
+        {% if not k.revoked %}
+        <tr>
+          <td><code>{{ k.key_prefix }}••••••••••••</code></td>
+          <td>{{ k.name }}</td>
+          <td>{{ k.created_at }}</td>
+          <td>{{ k.last_used_at or '—' }}</td>
+          <td>
+            <form method="post" action="/dashboard/keys/{{ k.id }}/revoke" onsubmit="return confirm('ยกเลิกคีย์นี้? แอปที่ใช้คีย์นี้จะเรียก API ไม่ได้ทันที')">
+              <button class="btn btn-danger btn-sm" type="submit">ยกเลิก</button>
+            </form>
+          </td>
+        </tr>
+        {% endif %}
+        {% else %}
+        <tr><td colspan="5" class="muted center">ยังไม่มีคีย์ — สร้างคีย์แรกด้านบนได้เลย</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    {% set revoked = keys | selectattr('revoked') | list %}
+    {% if revoked %}
+    <h3 style="margin-top:24px">คีย์ที่ยกเลิกแล้ว</h3>
+    <div class="card table-card">
+      <table class="table">
+        <tr><th>คีย์</th><th>ชื่อ</th><th>ยกเลิกเมื่อสร้าง</th></tr>
+        {% for k in revoked %}<tr><td><code>{{ k.key_prefix }}••••</code></td><td class="muted">{{ k.name }}</td><td class="muted">{{ k.created_at }}</td></tr>{% endfor %}
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
