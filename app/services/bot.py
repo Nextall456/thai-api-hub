@@ -147,7 +147,8 @@ async def run_polling() -> None:
                     log.error("Telegram bot token ไม่ถูกต้อง — หยุดบอท")
                     return
                 updates = r.json().get("result", [])
-                log.debug("poll got %d updates", len(updates))
+                if updates:
+                    log.info("poll got %d updates", len(updates))
                 for upd in updates:
                     offset = upd["update_id"] + 1
                     try:
