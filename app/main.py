@@ -1,5 +1,6 @@
 """Thai API Hub — API Gateway + ระบบขาย API รายเดือน/รายปี"""
 import asyncio
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -12,12 +13,16 @@ from .api_errors import ApiError
 from .routers import admin, dashboard, gateway, public
 from .services import bot as tg_bot
 
+# Set log level to INFO for all loggers
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(name)s: %(message)s")
+
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     db.init_db()
     bot_task = None
     if config.TELEGRAM_BOT_TOKEN:
+        logging.getLogger(__name__).info("Starting Telegram bot polling task...")
         bot_task = asyncio.create_task(tg_bot.run_polling())
     yield
     if bot_task:
