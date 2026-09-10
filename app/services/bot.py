@@ -135,7 +135,7 @@ async def run_polling() -> None:
     """วนรับข้อความจาก Telegram (long-polling) — รันเป็น background task ใน FastAPI"""
     if not config.TELEGRAM_BOT_TOKEN:
         return
-    log.info("Telegram bot polling started")
+    log.info("Telegram bot polling started | token_prefix=%s...", config.TELEGRAM_BOT_TOKEN[:10])
     offset = 0
     async with httpx.AsyncClient(timeout=httpx.Timeout(60, connect=15)) as c:
         while True:
@@ -146,7 +146,9 @@ async def run_polling() -> None:
                 if r.status_code in (401, 404):
                     log.error("Telegram bot token ไม่ถูกต้อง — หยุดบอท")
                     return
-                for upd in r.json().get("result", []):
+                updates = r.json().get("result", [])
+                log.debug("poll got %d updates", len(updates))
+                for upd in updates:
                     offset = upd["update_id"] + 1
                     try:
                         await _handle(upd)
