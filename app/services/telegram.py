@@ -89,3 +89,13 @@ async def notify_payment_rejected(pay: dict, user_email: str, plan_name: str) ->
 
 async def notify_error(error: str, context: str = "") -> bool:
     return await send_telegram(_fmt_error(error, context))
+
+
+async def notify_subscription_created(pay: dict, user_email: str, plan_name: str) -> bool:
+    """ลูกค้าสนใจแพ็กเกจ (สร้างบิลรอชำระ)"""
+    return await send_telegram(
+        f"🎯 <b>ลูกค้าสนใจแพ็กเกจ (สร้างบิล)</b>\n"
+        f"👤 {user_email}\n"
+        f"📦 {plan_name} ({pay['billing_period'] == 'year' and 'รายปี' or 'รายเดือน'})\n"
+        f"💵 ฿{pay['amount_thb']:,.2f}\n"
+        f"🔖 Ref: <code>{pay['ref_code']}</code>")

@@ -126,6 +126,14 @@ CREATE TABLE IF NOT EXISTS usage_logs(
 );
 CREATE INDEX IF NOT EXISTS idx_usage_user ON usage_logs(user_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_usage_key ON usage_logs(key_id, created_at);
+CREATE TABLE IF NOT EXISTS bot_chats(
+  chat_id INTEGER PRIMARY KEY,
+  name TEXT DEFAULT '',
+  username TEXT DEFAULT '',
+  msg_count INTEGER DEFAULT 0,
+  created_at TEXT NOT NULL,
+  last_msg_at TEXT DEFAULT ''
+);
 """
 
 # แพ็กเกจขาย (features_th คั่นรายการด้วย |)

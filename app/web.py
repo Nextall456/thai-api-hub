@@ -40,5 +40,6 @@ def render(request, name: str, status_code: int = 200, **ctx):
     ctx.setdefault("user", get_user(request))
     ctx.setdefault("site_name", config.SITE_NAME)
     ctx.setdefault("site_url", config.SITE_URL)
+    ctx.setdefault("version", config.VERSION)
     ctx.setdefault("msg", request.query_params.get("msg", ""))
     return templates.TemplateResponse(request, name, ctx, status_code=status_code)

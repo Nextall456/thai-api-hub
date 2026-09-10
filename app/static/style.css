@@ -281,10 +281,85 @@ footer { border-top: 1px solid var(--border); padding: 28px 0; margin-top: 40px;
 /* ---------- responsive ---------- */
 @media (max-width: 900px) {
   .grid-3, .grid-4, .grid-5 { grid-template-columns: repeat(2, 1fr); }
+  .dash-subnav { gap: 6px; }
+  .dash-subnav a { padding: 6px 12px; font-size: 0.85rem; }
+}
+@media (max-width: 768px) {
+  .nav-inner { flex-wrap: wrap; justify-content: center; }
+  .nav-links { order: 3; width: 100%; justify-content: center; margin-top: 10px; }
+  .hero { padding: 56px 0 40px; }
+  .hero h1 { font-size: 2rem; }
+  .lead { font-size: 1rem; }
+  .cta-row { flex-direction: column; align-items: stretch; }
+  .cta-row .btn { width: 100%; }
+  .code-head { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .page-head { flex-direction: column; align-items: flex-start; }
+  .page-head .btn { width: 100%; }
+  .member-card { flex-direction: column; text-align: center; }
+  .avatar { margin: 0 auto 10px; }
+  .stat-cards .card { padding: 14px; }
+  .stat-value { font-size: 1.4rem; }
+  .price-card { padding: 18px; }
+  .amount { font-size: 1.8rem; }
+  .pay-row { flex-direction: column; }
+  .invoice-wrap { padding: 0 12px; }
+  .invoice-card { padding: 20px; }
+  .bank-box { padding: 10px 12px; }
+  .qr-box { width: 220px; }
+  .form-inline { flex-direction: column; }
+  .form-inline input, .form-inline .btn { width: 100%; }
+  .bars { gap: 4px; height: 120px; }
+  .dash-subnav { overflow-x: auto; white-space: nowrap; flex-wrap: nowrap; padding-bottom: 8px; }
+  .dash-subnav a { flex-shrink: 0; }
 }
 @media (max-width: 600px) {
   .grid-2, .grid-3, .grid-4, .grid-5 { grid-template-columns: 1fr; }
-  .nav-links { gap: 12px; }
-  .hero { padding: 48px 0 36px; }
-  .doc pre { font-size: 0.78rem; }
+  .nav-links { gap: 8px; font-size: 0.85rem; }
+  .nav-links a { padding: 6px 10px; }
+  .hero { padding: 40px 0 32px; }
+  .hero h1 { font-size: 1.7rem; }
+  .badge-line { gap: 6px; }
+  .badge { font-size: 0.75rem; padding: 3px 10px; }
+  .section { padding: 40px 0; }
+  .card { padding: 16px; }
+  .stat-cards .card { padding: 12px; }
+  .stat-label { font-size: 0.72rem; }
+  .stat-value { font-size: 1.2rem; }
+  .lead { font-size: 0.95rem; }
+  .cta-row .btn-lg { padding: 12px 20px; font-size: 0.95rem; }
+  .price-card { padding: 16px; }
+  .amount { font-size: 1.6rem; }
+  .features li { font-size: 0.85rem; padding-left: 22px; }
+  .features li::before { left: 2px; }
+  .invoice-card { padding: 16px; }
+  .invoice-tbl td:first-child { width: 110px; }
+  .amount-big { font-size: 1.5rem; }
+  .qr-box { width: 200px; }
+  .pay-steps { padding-left: 16px; font-size: 0.85rem; }
+  .form-card { padding: 24px; margin: 24px auto; }
+  .btn { padding: 10px 16px; font-size: 0.9rem; }
+  .btn-sm { padding: 6px 10px; font-size: 0.8rem; }
+  .page-head { gap: 8px; }
+  .page-head h1 { font-size: 1.3rem; }
+  .bar-col { min-width: 28px; }
+  .dash-subnav { gap: 4px; }
+  .dash-subnav a { padding: 5px 10px; font-size: 0.8rem; }
+  .table-card { padding: 4px 8px; }
+  .table th, .table td { padding: 8px 6px; font-size: 0.8rem; }
+  .small-tbl th, .small-tbl td { padding: 6px 4px; font-size: 0.75rem; }
+  .footer-inner { flex-direction: column; text-align: center; gap: 6px; }
+  pre { font-size: 0.75rem; padding: 12px; }
+  .code-head { font-size: 0.78rem; }
+  .pg-output { min-height: 200px; font-size: 0.9rem; }
+  .member-card { gap: 12px; }
+  .avatar { width: 56px; height: 56px; font-size: 1.3rem; }
+}
+@media (max-width: 400px) {
+  .container { padding: 0 12px; }
+  .hero h1 { font-size: 1.5rem; }
+  .stat-cards .card { padding: 10px; }
+  .stat-value { font-size: 1.1rem; }
+  .btn { padding: 8px 14px; }
+  .price-card { padding: 14px; }
+  .amount { font-size: 1.4rem; }
 }

@@ -124,6 +124,9 @@ async def subscribe(request: Request, plan_code: str = Form(...), period: str = 
     pay_id = db.x("INSERT INTO payments(user_id, subscription_id, plan_code, billing_period, "
                   "amount_thb, ref_code, created_at) VALUES(?,?,?,?,?,?,?)",
                   (user["id"], sub_id, plan_code, period, amount, ref, db.now_str()))
+    # แจ้งเตือนแอดมิน: ลูกค้าสนใจแพ็กเกจ (สร้างบิลรอชำระ)
+    pay = db.q("SELECT * FROM payments WHERE id=?", (pay_id,), one=True)
+    await tg_notify.notify_subscription_created(pay, user["email"], plan["name_th"])
     return RedirectResponse(f"/dashboard/billing/invoice/{pay_id}", 303)
 
 
@@ -158,7 +161,9 @@ async def invoice_notify(request: Request, pay_id: int, note: str = Form("")):
          (db.now_str(), note.strip()[:200], pay_id, user["id"]))
 
     # แจ้งเตือนแอดมิน: มีการแจ้งชำระเงินใหม่
-    await tg_notify.notify_payment_pending(pay, user["email"], plan["name_th"])
+    plan_name = db.q("SELECT name_th FROM plans WHERE code=?", (pay["plan_code"],), one=True)
+    await tg_notify.notify_payment_pending(pay, user["email"],
+                                           plan_name["name_th"] if plan_name else pay["plan_code"])
 
     if config.AUTO_VERIFY_PAYMENT:
         # โหมดอนุมัติอัตโนมัติ (เปิด/ปิดที่ AUTO_VERIFY_PAYMENT ใน .env)
@@ -178,7 +183,8 @@ async def invoice_notify(request: Request, pay_id: int, note: str = Form("")):
         db.x("UPDATE payments SET status='verified', verified_at=? WHERE id=?",
              (db.now_str(), pay_id))
         # แจ้งเตือนแอดมิน: อนุมัติอัตโนมัติ
-        await tg_notify.notify_payment_verified(pay, user["email"], plan["name_th"], auto=True)
+        await tg_notify.notify_payment_verified(pay, user["email"],
+                                                plan_name["name_th"] if plan_name else pay["plan_code"], auto=True)
         return RedirectResponse(f"/dashboard/billing/invoice/{pay_id}?msg=" +
                                 quote("อนุมัติอัตโนมัติแล้ว — แพ็กเกจเปิดใช้งานทันที"), 303)
 

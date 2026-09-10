@@ -1,4 +1,5 @@
 """Thai API Hub — API Gateway + ระบบขาย API รายเดือน/รายปี"""
+import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -6,15 +7,21 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import db
+from . import config, db
 from .api_errors import ApiError
 from .routers import admin, dashboard, gateway, public
+from .services import bot as tg_bot
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     db.init_db()
+    bot_task = None
+    if config.TELEGRAM_BOT_TOKEN:
+        bot_task = asyncio.create_task(tg_bot.run_polling())
     yield
+    if bot_task:
+        bot_task.cancel()
 
 
 app = FastAPI(title="Thai API Hub", lifespan=lifespan,

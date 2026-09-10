@@ -44,4 +44,8 @@ PAYMENT_QR_PATH = BASE_DIR / "static" / "payment-qr.jpg"
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
 
+# โหมดอนุมัติชำระเงินอัตโนมัติ (true = ลูกค้ากดแจ้งชำระแล้วเปิดใช้ทันที / false = แอดมินกดอนุมัติเอง)
+AUTO_VERIFY_PAYMENT = os.environ.get("AUTO_VERIFY_PAYMENT", "false").lower() == "true"
+
 TRIAL_DAYS = int(os.environ.get("TRIAL_DAYS", "7"))
+VERSION = "1.1.0"
