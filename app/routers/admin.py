@@ -8,6 +8,7 @@ from urllib.parse import quote
 from .. import config, db
 from ..services import telegram as tg_notify
 from ..services.providers import ollama_models
+from ..services.security import audit
 from ..web import get_user, render
 
 router = APIRouter(prefix="/admin")
@@ -85,6 +86,7 @@ async def verify_payment(request: Request, pay_id: int):
     pay_info = db.q("SELECT pay.*, p.name_th plan_name FROM payments pay JOIN plans p ON p.code=pay.plan_code WHERE pay.id=?", (pay_id,), one=True)
     user_email = db.q("SELECT email FROM users WHERE id=?", (pay["user_id"],), one=True)["email"]
     await tg_notify.notify_payment_verified(pay_info, user_email, pay_info["plan_name"], auto=False)
+    audit(user["id"], "verify_payment", f"บิล #{pay_id} ref={pay['ref_code']} {pay['plan_code']} ฿{pay['amount_thb']}")
     return RedirectResponse("/admin?msg=" + quote(f"อนุมัติบิล #{pay_id} แล้ว — เปิดใช้งาน {period_days} วัน"), 303)
 
 
@@ -99,6 +101,7 @@ async def reject_payment(request: Request, pay_id: int):
     if pay:
         user_email = db.q("SELECT email FROM users WHERE id=?", (pay["user_id"],), one=True)["email"]
         await tg_notify.notify_payment_rejected(pay, user_email, pay["plan_name"])
+    audit(user["id"], "reject_payment", f"บิล #{pay_id} ref={pay['ref_code'] if pay else '?'}")
     return RedirectResponse("/admin?msg=" + quote("ปฏิเสธบิลแล้ว"), 303)
 
 
@@ -110,4 +113,5 @@ async def toggle_user(request: Request, uid: int):
     target = db.q("SELECT * FROM users WHERE id=?", (uid,), one=True)
     if target and target["id"] != user["id"]:
         db.x("UPDATE users SET is_active=? WHERE id=?", (0 if target["is_active"] else 1, uid))
+        audit(user["id"], "toggle_user", f"ผู้ใช้ #{uid} {target['email']} → {'ระงับ' if target['is_active'] else 'ปลดระงับ'}")
     return RedirectResponse("/admin/users?msg=" + quote("อัปเดตสถานะผู้ใช้แล้ว"), 303)

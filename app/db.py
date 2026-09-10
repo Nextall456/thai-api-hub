@@ -134,6 +134,14 @@ CREATE TABLE IF NOT EXISTS bot_chats(
   created_at TEXT NOT NULL,
   last_msg_at TEXT DEFAULT ''
 );
+CREATE TABLE IF NOT EXISTS audit_logs(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER,
+  action TEXT NOT NULL,
+  detail TEXT DEFAULT '',
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_logs(created_at);
 """
 
 # แพ็กเกจขาย (features_th คั่นรายการด้วย |)

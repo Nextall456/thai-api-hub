@@ -12,26 +12,31 @@ from . import config, db
 from .api_errors import ApiError
 from .routers import admin, dashboard, gateway, public
 from .services import bot as tg_bot
+from .services import monitor as monitor_svc
+from .services.security import rate_limit_middleware, security_headers_middleware
 
-# Set log level to INFO for all loggers
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(name)s: %(message)s")
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     db.init_db()
-    bot_task = None
+    tasks = []
     if config.TELEGRAM_BOT_TOKEN:
-        logging.getLogger(__name__).info("Starting Telegram bot polling task...")
-        bot_task = asyncio.create_task(tg_bot.run_polling())
+        tasks.append(asyncio.create_task(tg_bot.run_polling()))
+    tasks.append(asyncio.create_task(monitor_svc.monitor_loop()))
     yield
-    if bot_task:
-        bot_task.cancel()
+    for t in tasks:
+        t.cancel()
 
 
 app = FastAPI(title="Thai API Hub", lifespan=lifespan,
               docs_url=None, redoc_url=None, openapi_url=None)
 app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "static")), name="static")
+
+# Security headers ก่อน แล้ว rate limit (ทำงานจากนอกสุดเข้าใน: ลงทะเบียนหลัง = ทำงานก่อน)
+app.middleware("http")(security_headers_middleware)
+app.middleware("http")(rate_limit_middleware)
 
 
 @app.exception_handler(ApiError)

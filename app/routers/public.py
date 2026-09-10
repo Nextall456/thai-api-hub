@@ -33,6 +33,25 @@ async def health():
     return {"ok": True, "service": config.SITE_NAME, "time": db.now_str()}
 
 
+@router.get("/metrics")
+async def metrics():
+    """Prometheus metrics (สำหรับ monitoring ภายนอก)"""
+    from fastapi.responses import PlainTextResponse
+    from ..services.monitor import collect_stats, render_prometheus
+    return PlainTextResponse(render_prometheus(collect_stats()),
+                             media_type="text/plain; version=0.0.4; charset=utf-8")
+
+
+@router.get("/tos")
+async def tos(request: Request):
+    return render(request, "tos.html")
+
+
+@router.get("/privacy")
+async def privacy(request: Request):
+    return render(request, "privacy.html")
+
+
 @router.get("/login")
 async def login_page(request: Request):
     if get_user(request):
