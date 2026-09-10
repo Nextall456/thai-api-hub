@@ -71,10 +71,11 @@ async def _is_new_chat(chat_id: int) -> bool:
 
 def _record_chat(m: dict) -> None:
     name = f"{m['first_name']} {m['last_name']}".strip() or m["username"] or str(m["chat_id"])
+    now = db.now_str()
     db.x("INSERT INTO bot_chats(chat_id, name, username, msg_count, created_at, last_msg_at) "
          "VALUES(?,?,?,1,?,?) ON CONFLICT(chat_id) DO UPDATE SET "
          "msg_count=msg_count+1, last_msg_at=?, name=?",
-         (m["chat_id"], name, m["username"], db.now_str(), db.now_str(), name))
+         (m["chat_id"], name, m["username"], now, now, now, name))
 
 
 async def _send(chat_id: int, text: str) -> None:
