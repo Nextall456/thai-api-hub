@@ -12,15 +12,19 @@
   --warn: #fbbf24;
   --danger: #f87171;
   --radius: 14px;
+  --font-main: "Noto Sans Thai", "Segoe UI", Tahoma, "Noto Sans", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", "Consolas", "Monospace";
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body {
-  font-family: "Noto Sans Thai", "Segoe UI", Tahoma, sans-serif;
+  font-family: var(--font-main);
   background: var(--bg);
   color: var(--text);
   line-height: 1.65;
   font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
