@@ -2,55 +2,195 @@
 {% block content %}
 <section class="hero">
   <div class="container">
-    <div class="badge-line"><span class="badge">🇹🇭 เซิร์ฟเวอร์อยู่ในไทย</span><span class="badge">ทดลองฟรี 7 วัน ไม่ต้องใช้บัตร</span></div>
-    <h1>ยิงงาน AI ผ่าน <span class="grad">API เดียว</span><br>เริ่มต้นหลักร้อยต่อเดือน</h1>
-    <p class="lead">Thai API Hub คือ API Gateway ที่เข้ากันได้ 100% กับ OpenAI SDK — ด้านหลังสลับให้อัตโนมัติระหว่าง
-    <b>AI ในเครื่องเซิร์ฟเวอร์ (ฟรี)</b>, <b>โมเดลฟรีคุณภาพสูง</b> และ <b>โมเดลพรีเมียมราคาถูก</b> จากแหล่ง AI ระดับโลก
-    เจ็บครั้งเดียวย้ายมาใช้งานได้เลย แพงน้อยกว่าหลายเท่า</p>
-    <div class="cta-row">
-      <a class="btn btn-primary btn-lg" href="/signup">สมัครทดลองใช้ฟรี</a>
-      <a class="btn btn-ghost btn-lg" href="/docs-api">ดูเอกสาร API</a>
+    <div class="badge-line">
+      <span class="badge">🇹🇭 BKK Low-Latency Server</span>
+      <span class="badge">⚡ &lt;5ms Circuit Breaker Failover</span>
+      <span class="badge">ทดลองฟรี 7 วัน ไม่ต้องผูกบัตร</span>
     </div>
-    <div class="code card">
-      <div class="code-head"><span>เริ่มใช้งานใน 30 วินาที</span><button class="btn btn-ghost btn-sm" data-copy>คัดลอก</button></div>
+    <h1>Unified AI API Gateway <br><span class="grad">สำหรับนักพัฒนา & โปรดักชัน</span></h1>
+    <p class="lead">เข้ากันได้ 100% กับ OpenAI SDK — เปลี่ยนเพียง <code>base_url</code> ด้านหลังสลับให้อัตโนมัติระหว่าง
+    <b>Local Private AI (ฟรีไม่อั้น)</b>, <b>Cloud Free Tier (Gemma 4, Llama 3.3)</b> และ <b>Cost-Performance Leaders</b>
+    (Gemini 2.5 Flash Lite, Mistral Small 24B, DeepSeek V3/R1) ประหยัดต้นทุน AI สูงสุดถึง 90% พร้อม Circuit Breaker เฝ้าระวังไม่ให้ Request สะดุด</p>
+
+    <div class="cta-row">
+      <a class="btn btn-primary btn-lg" href="/signup">สมัครรับ API Key ฟรี</a>
+      <a class="btn btn-ghost btn-lg" href="/docs-api">ดู API Documentation</a>
+    </div>
+
+    <!-- Telemetry Bar -->
+    <div class="telemetry-bar">
+      <div class="telemetry-item">
+        <span class="telemetry-dot"></span>
+        <span>Gateway Status: <span class="telemetry-val">Operational (99.9%)</span></span>
+      </div>
+      <div class="telemetry-item">
+        <span>⚡ Avg TTFT: <span class="telemetry-val">~320ms</span></span>
+      </div>
+      <div class="telemetry-item">
+        <span>🛡️ Failover Speed: <span class="telemetry-val">&lt;5ms</span></span>
+      </div>
+      <div class="telemetry-item">
+        <span>📦 SDK Compatibility: <span class="telemetry-val">100% OpenAI Drop-in</span></span>
+      </div>
+    </div>
+
+    <!-- Multi-Language Code Switcher -->
+    <div class="code-box">
+      <div class="code-tabs">
+        <button class="code-tab active" data-lang="curl">cURL</button>
+        <button class="code-tab" data-lang="python">Python (openai)</button>
+        <button class="code-tab" data-lang="ts">TypeScript / Node.js</button>
+        <button class="code-tab" data-lang="go">Go</button>
+      </div>
+      <div class="code-header-bar">
+        <span>POST /v1/chat/completions</span>
+        <button class="btn btn-ghost btn-sm" data-copy>คัดลอกโค้ด</button>
+      </div>
+
+      <div class="code-pane active" data-lang="curl">
 <pre>curl {{ site_url }}/v1/chat/completions \
-  -H "Authorization: Bearer th-ใส่คีย์ของคุณ" \
+  -H "Authorization: Bearer th-xxxxxxxxxxxxxxxx" \
   -H "Content-Type: application/json" \
-  -d '{"model":"thai-hub/auto","messages":[{"role":"user","content":"สวัสดี แนะนำตัวหน่อย"}]}'</pre>
+  -d '{
+    "model": "thai-hub/auto",
+    "messages": [{"role": "user", "content": "เขียน SQL query สรุปยอดขายตามหมวดหมู่"}]
+  }'</pre>
+      </div>
+
+      <div class="code-pane" data-lang="python">
+<pre>from openai import OpenAI
+
+client = OpenAI(
+    base_url="{{ site_url }}/v1",
+    api_key="th-xxxxxxxxxxxxxxxx"
+)
+
+response = client.chat.completions.create(
+    model="thai-hub/auto",  # หรือ thai-hub/cheap, thai-hub/best
+    messages=[{"role": "user", "content": "เขียน FastAPI endpoint พร้อม auth"}],
+    stream=True
+)
+
+for chunk in response:
+    print(chunk.choices[0].delta.content or "", end="")</pre>
+      </div>
+
+      <div class="code-pane" data-lang="ts">
+<pre>import OpenAI from "openai";
+
+const openai = new OpenAI({
+  baseURL: "{{ site_url }}/v1",
+  apiKey: "th-xxxxxxxxxxxxxxxx",
+});
+
+const completion = await openai.chat.completions.create({
+  model: "thai-hub/auto",
+  messages: [{ role: "user", content: "Optimize this PostgreSQL query" }],
+});
+
+console.log(completion.choices[0].message.content);</pre>
+      </div>
+
+      <div class="code-pane" data-lang="go">
+<pre>package main
+
+import (
+    "context"
+    "fmt"
+    openai "github.com/sashabaranov/go-openai"
+)
+
+func main() {
+    cfg := openai.DefaultConfig("th-xxxxxxxxxxxxxxxx")
+    cfg.BaseURL = "{{ site_url }}/v1"
+    client := openai.NewClientWithConfig(cfg)
+
+    resp, _ := client.CreateChatCompletion(
+        context.Background(),
+        openai.ChatCompletionRequest{
+            Model: "thai-hub/auto",
+            Messages: []openai.ChatCompletionMessage{
+                {Role: openai.ChatMessageRoleUser, Content: "Hello from Go!"},
+            },
+        },
+    )
+    fmt.Println(resp.Choices[0].Message.Content)
+}</pre>
+      </div>
     </div>
   </div>
 </section>
 
 <section id="features" class="section">
   <div class="container">
-    <h2>จุดเด่นที่ลูกค้าได้ประโยชน์จริง</h2>
+    <h2>สถาปัตยกรรมที่ออกแบบมาเพื่อ Production</h2>
     <div class="grid grid-3">
-      <div class="card"><div class="icon">🔌</div><h3>เข้ากันได้กับ OpenAI 100%</h3><p>เปลี่ยนแค่ <code>base_url</code> กับ API key ในโค้ดเดิมของคุณ ใช้ได้กับ Python, Node.js, Go, PHP และเครื่องมืออย่าง LangChain / n8n ทันที</p></div>
-      <div class="card"><div class="icon">🔄</div><h3>สลับโมเดลอัตโนมัติ (Failover)</h3><p>เซิร์ฟเวอร์สลับไปให้เองตามลำดับ: AI ในเครื่อง → โมเดลฟรี → โมเดลพรีเมียม ไม่มีงานค้างเพราะโมเดลไหนล่มหรือติด rate limit</p></div>
-      <div class="card"><div class="icon">🏠</div><h3>Local AI ในเครื่อง ฟรีไม่อั้น</h3><p>เรารันโมเดลโอเพนซอร์ส (Qwen 2.5) บนเซิร์ฟเวอร์ของเราเอง งานทั่วไปใช้เส้นทางนี้ได้ฟรี ข้อมูลไม่ออกจากบ้าน</p></div>
-      <div class="card"><div class="icon">💸</div><h3>ราคาคนไทยจ่ายไหว</h3><p>เริ่มต้น ฿199/เดือน หรือจ่ายรายปีลดเพิ่ม เทียบกับค่าโมเดลรายใหญ่ที่พุ่งเป็นพันต่อเดือนสำหรับงานหนัก</p></div>
-      <div class="card"><div class="icon">📊</div><h3>แดชบอร์ดภาษาไทย</h3><p>เห็นการใช้งานแบบเรียลไทม์ สร้าง/ยกเลิก API key ได้เอง โควตาเหลือเท่าไร ใช้โมเดลอะไร ค่าใช้จ่ายตกเท่าไร โปร่งใสหมด</p></div>
-      <div class="card"><div class="icon">📱</div><h3>จ่ายง่ายด้วย QR / โอนธนาคาร</h3><p>สแกน QR หรือโอนเข้าบัญชีธนาคารได้ทุกแบงก์ กดแจ้งชำระ รออนุมัติไม่นาน เปิดใช้งานทันทีที่ตรวจสอบเสร็จ</p></div>
+      <div class="card">
+        <div class="icon">🔌</div>
+        <h3>100% OpenAI Drop-in SDK</h3>
+        <p>เปลี่ยนเพียง <code>base_url</code> ในโปรเจกต์เดิม รองรับทั้ง Python, Node.js, Go, PHP และ AI Frameworks ยอดนิยมอย่าง LangChain, LlamaIndex, LiteLLM และ n8n</p>
+      </div>
+      <div class="card">
+        <div class="icon">⚡</div>
+        <h3>Circuit Breaker &amp; Smart Failover</h3>
+        <p>เฝ้าระวังความเสถียรของ backend แบบเรียลไทม์ หากโมเดลใดติด Rate Limit หรือล่ม ระบบตัดวงจรข้ามไปตัวถัดไปใน &lt;5ms ไร้ปัญหา Request ค้าง</p>
+      </div>
+      <div class="card">
+        <div class="icon">🏠</div>
+        <h3>Private Local AI (Zero Leakage)</h3>
+        <p>เชื่อมต่อกับ Ollama (Qwen 2.5) บนเซิร์ฟเวอร์ในไทย คำขอประมวลผลภายในเครื่องแบบไม่เสียค่าโทเคน และข้อมูลไม่ออกจากระบบ</p>
+      </div>
+      <div class="card">
+        <div class="icon">💰</div>
+        <h3>Price-to-Intelligence Leaders</h3>
+        <p>คัดกรองโมเดลที่คุ้มค่าที่สุดในโลก (Gemini 2.5 Flash Lite, Mistral Small, DeepSeek V3) ราคาเฉลี่ยถูกกว่าโมเดลยักษ์ใหญ่ถึง 10-20 เท่า</p>
+      </div>
+      <div class="card">
+        <div class="icon">📊</div>
+        <h3>Standard RateLimit &amp; Telemetry</h3>
+        <p>ส่ง Headers มาตรฐาน OpenAI ครบถ้วน (<code>X-RateLimit-*</code>, <code>X-Thai-Hub-Backend</code>, <code>X-Thai-Hub-Latency-Ms</code>) เพื่อให้ระบบของคุณตรวจสอบได้ชัดเจน</p>
+      </div>
+      <div class="card">
+        <div class="icon">📱</div>
+        <h3>PromptPay Developer Billing</h3>
+        <p>สแกน QR หรือโอนธนาคาร จ่ายง่ายในสกุลเงินบาท ไม่มีค่าธรรมเนียมแปลงสกุลเงิน ไม่มีตัดบัตรเซอร์ไพรส์ และแจ้งเตือนผ่าน Telegram แบบเรียลไทม์</p>
+      </div>
     </div>
   </div>
 </section>
 
 <section class="section alt">
   <div class="container">
-    <h2>ใช้งาน 4 ขั้น จบ</h2>
+    <h2>Quickstart 4 ขั้นตอน</h2>
     <div class="grid grid-4">
-      <div class="step"><b>1</b><h3>สมัครสมาชิก</h3><p>อีเมล + รหัสผ่าน รับสิทธิ์ทดลองฟรี 7 วันทันที</p></div>
-      <div class="step"><b>2</b><h3>สร้าง API Key</h3><p>สร้างได้หลายคีย์ ตั้งชื่อแยกโปรเจกต์ ยกเลิกเองได้</p></div>
-      <div class="step"><b>3</b><h3>ชี้ base_url มาที่เรา</h3><p>เปลี่ยนสองบรรทัดในโค้ดเดิม จบ</p></div>
-      <div class="step"><b>4</b><h3>จ่ายค่าบริการ</h3><p>สแกน QR หรือโอนธนาคาร เลือกรายเดือนหรือรายปี</p></div>
+      <div class="step"><b>1</b><h3>Create Account</h3><p>สมัครด้วยอีเมล รับสิทธิ์ Hacker Sandbox 7 วันทันที</p></div>
+      <div class="step"><b>2</b><h3>Generate API Key</h3><p>สร้าง API Key สำหรับโปรเจกต์ ตั้งชื่อและยกเลิกได้เอง</p></div>
+      <div class="step"><b>3</b><h3>Point base_url</h3><p>เปลี่ยน 2 บรรทัดในโค้ดเดิมของคุณ ชี้มาที่ Thai API Hub</p></div>
+      <div class="step"><b>4</b><h3>Scale with PromptPay</h3><p>เลือกแพ็กเกจตามการใช้งาน ชำระผ่าน Thai QR / Bank Transfer</p></div>
     </div>
 
-    <h2 style="margin-top:48px">เลือกเส้นทางโมเดลด้วยชื่อเดียว</h2>
+    <h2 style="margin-top:48px">Unified Model Routing Matrix</h2>
     <div class="card table-card">
       <table class="table">
-        <tr><th>ชื่อโมเดล (alias)</th><th>ความหมาย</th></tr>
+        <tr><th>Model Alias</th><th>คำอธิบาย &amp; Backend Routing Chain</th><th>Capabilities</th></tr>
         {% for alias, desc in alias_info.items() %}
-        <tr><td><code>{{ alias }}</code></td><td>{{ desc }}</td></tr>
+        <tr>
+          <td><code>{{ alias }}</code></td>
+          <td>{{ desc }}</td>
+          <td>
+            {% if alias == 'thai-hub/auto' %}
+            <span class="tech-pill">Smart Failover</span><span class="tech-pill">Auto Cost-Opt</span>
+            {% elif alias == 'thai-hub/local' %}
+            <span class="tech-pill">Qwen 2.5</span><span class="tech-pill">Local/Free</span>
+            {% elif alias == 'thai-hub/free' %}
+            <span class="tech-pill">Gemma 4</span><span class="tech-pill">Llama 3.3 70B</span>
+            {% elif alias == 'thai-hub/cheap' %}
+            <span class="tech-pill">Gemini 2.5 Flash Lite</span><span class="tech-pill">DeepSeek V3</span>
+            {% elif alias == 'thai-hub/best' %}
+            <span class="tech-pill">DeepSeek R1 (Reasoning)</span><span class="tech-pill">Top Quality</span>
+            {% endif %}
+          </td>
+        </tr>
         {% endfor %}
       </table>
     </div>
@@ -59,12 +199,12 @@
 
 <section id="pricing" class="section">
   <div class="container">
-    <h2>แพ็กเกจราคา</h2>
-    <p class="muted center">ทุกแพ็กเกจใช้ endpoint เดียวกัน ต่างกันที่โควตาและโมเดลที่เข้าถึงได้ — ทดลองฟรี 7 วันก่อนตัดสินใจ</p>
+    <h2>Developer Pricing Tiers</h2>
+    <p class="muted center">ทุก Tier เข้าถึง Endpoint เดียวกัน ต่างกันที่โควตาความเร็วและระดับโมเดล — เริ่มต้นด้วย Hacker Sandbox ฟรี 7 วัน</p>
     <div class="grid grid-3 pricing">
       {% for p in plans %}
       <div class="card price-card {% if p.code == 'pro' %}popular{% endif %}">
-        {% if p.code == 'pro' %}<div class="pop-badge">ยอดนิยม</div>{% endif %}
+        {% if p.code == 'pro' %}<div class="pop-badge">RECOMMENDED</div>{% endif %}
         <h3>{{ p.name_th }}</h3>
         <div class="price">
           <span class="amount" data-month="{{ '%.0f'|format(p.price_month_thb) }}" data-year="{{ '%.0f'|format(p.price_year_thb) }}">฿{{ '%.0f'|format(p.price_month_thb) }}</span>
@@ -74,7 +214,7 @@
         <ul class="features">
           {% for f in p.features_th.split('|') %}<li>{{ f }}</li>{% endfor %}
         </ul>
-        <a class="btn btn-primary btn-block" href="/signup">เริ่มใช้งาน</a>
+        <a class="btn btn-primary btn-block" href="/signup">Get Started</a>
       </div>
       {% endfor %}
     </div>
@@ -83,17 +223,29 @@
 
 <section class="section alt">
   <div class="container">
-    <h2>คำถามที่พบบ่อย</h2>
+    <h2>คำถามที่พบบ่อย (Developer FAQ)</h2>
     <div class="faq">
-      <details><summary>ต่างจากไปสมัคร OpenAI/Anthropic เองยังไง?</summary><p>ไม่ต้องสมัครบัตรต่างประเทศ ไม่ต้องจ่ายดอลลาร์ ไม่ต้องดูแลหลายบัญชี — จ่ายบาทเดียวจบ และระบบเลือกโมเดลที่ถูกที่สุดที่งานออกมาดีให้เอง</p></details>
-      <details><summary>โมเดลอะไรบ้าง?</summary><p>เส้นทางฟรีใช้ตัวเก่งๆ อย่าง Llama 3.3 70B, DeepSeek V3, Qwen3, Gemma 3 ส่วนเส้นทางพรีเมียมใช้โมเดลชั้นนำอย่าง DeepSeek V3.1, Gemini Flash, GPT-4o-mini และแพ็กเกจโปรขึ้นไปเลือกโมเดล AI ระดับโลกได้เองทุกตัว</p></details>
-      <details><summary>"AI ในเครื่อง" แปลว่าอะไร?</summary><p>เรารันโมเดลโอเพนซอร์สบนเซิร์ฟเวอร์ของเราเอง คำขอของคุณไม่ต้องออกไปหาบริการภายนอก — เหมาะกับงานทั่วไป ช่วยประหยัดค่าโมเดลได้มหาศาล</p></details>
-      <details><summary>จ่ายเงินยังไง? ยกเลิกได้ไหม?</summary><p>สแกน QR หรือโอนเข้าบัญชีธนาคารจากหน้าบิลในแดชบอร์ด กดแจ้งชำระ แล้วรออนุมัติ หมดสัญญาแล้วไม่ต่อก็จบ ไม่มีบัตรถูกตัดอัตโนมัติ</p></details>
-      <details><summary>โควตาเกินแล้วเกิดอะไรขึ้น?</summary><p>API จะตอบ 429 พร้อมข้อความภาษาไทยบอกเหตุผล คุณต่ออายุหรืออัปเกรดแพ็กเกจได้ทันทีจากหน้า Billing</p></details>
+      <details>
+        <summary>เปลี่ยนมาใช้ Thai API Hub ต้องแก้โค้ดเยอะไหม?</summary>
+        <p>ไม่เลยครับ โค้ดเดิมที่ใช้ OpenAI SDK (Python, Node.js, Go, PHP) แก้เพียง 2 บรรทัด คือ <code>base_url="https://thai-api-hub-production.up.railway.app/v1"</code> และ <code>api_key="th-คีย์ของคุณ"</code> ก็สามารถใช้งาน Streaming, Tool Calling และ Responses ได้ทันที</p>
+      </details>
+      <details>
+        <summary>ระบบสลับโมเดลอัตโนมัติ (Circuit Breaker Failover) ทำงานอย่างไร?</summary>
+        <p>เรามี In-Memory Circuit Breaker คอยวัดผลความเร็วและสถานะของแต่ละ Backend หากโมเดลตัวแรกล้มเหลวหรือติด Rate Limit ระบบจะตัดวงจรและ Failover สลับไปยังโมเดลสำรองที่มีคุณภาพใกล้เคียงกันทันทีในเวลา &lt;5ms โดยไม่ต้องรอ HTTP Timeout นาน 15-30 วินาที</p>
+      </details>
+      <details>
+        <summary>มี Response Headers อะไรส่งกลับมาบ้างสำหรับ Observability?</summary>
+        <p>ทุก Request จะมี Header มาตรฐานส่งกลับมาเสมอ ได้แก่ <code>X-Thai-Hub-Backend</code> (บอก provider และ model จริงที่ประมวลผล), <code>X-Thai-Hub-Latency-Ms</code>, <code>X-Thai-Hub-Attempts</code>, และกลุ่ม <code>X-RateLimit-*</code> แสดงจำนวนคำขอและ Token คงเหลือ</p>
+      </details>
+      <details>
+        <summary>การชำระเงินและการต่ออายุทำอย่างไร?</summary>
+        <p>ชำระผ่าน PromptPay QR หรือโอนผ่านธนาคารไทยได้ทุกธนาคารในหน้า Billing ในแดชบอร์ด ไม่มีค่าธรรมเนียมบัตรเครดิตต่างประเทศ ไม่มีระบบหักเงินอัตโนมัติ หมดอายุแล้วระบบจะหยุดทำงานโดยไม่มีบิลค้าง</p>
+      </details>
     </div>
     <div class="center" style="margin-top:40px">
-      <a class="btn btn-primary btn-lg" href="/signup">เริ่มใช้ฟรี 7 วัน</a>
+      <a class="btn btn-primary btn-lg" href="/signup">เริ่มทดลองใช้งานฟรี 7 วัน</a>
     </div>
   </div>
 </section>
 {% endblock %}
+

@@ -24,25 +24,69 @@ def get_active_plan(user: dict) -> tuple[dict | None, str]:
     return None, "none"
 
 
-def check_quota(user_id: int, key_id: int | None, plan: dict) -> None:
+def get_rate_limit_info(user_id: int, key_id: int | None, plan: dict) -> dict:
+    """คำนวณสถิติโควตาคงเหลือและสถานะแจ้งเตือนล่วงหน้า (80% / 95%)"""
     today = datetime.now().strftime("%Y-%m-%d")
-    r = db.q("SELECT COUNT(*) c FROM usage_logs WHERE user_id=? AND date(created_at)=?",
-             (user_id, today), one=True)
-    if r["c"] >= plan["daily_requests"]:
-        raise ApiError(429, f"ครบโควตา {plan['daily_requests']:,} คำขอ/วัน ของแพ็กเกจ {plan['name_th']} แล้ว "
-                            f"(ต่ออายุ/อัปเกรดได้ที่หน้า Billing)", "quota_error")
+    r_daily = db.q("SELECT COUNT(*) c FROM usage_logs WHERE user_id=? AND date(created_at)=?",
+                   (user_id, today), one=True)
+    daily_used = r_daily["c"] if r_daily else 0
+    daily_limit = plan.get("daily_requests", 0)
+
     month_start = datetime.now().strftime("%Y-%m-01 00:00:00")
-    r = db.q("SELECT COALESCE(SUM(prompt_tokens + completion_tokens), 0) t FROM usage_logs "
-             "WHERE user_id=? AND created_at >= ?", (user_id, month_start), one=True)
-    if r["t"] >= plan["monthly_tokens"]:
-        raise ApiError(429, f"ครบโควตา {plan['monthly_tokens']:,} tokens/เดือน แล้ว "
-                            f"(ต่ออายุ/อัปเกรดได้ที่หน้า Billing)", "quota_error")
+    r_month = db.q("SELECT COALESCE(SUM(prompt_tokens + completion_tokens), 0) t FROM usage_logs "
+                   "WHERE user_id=? AND created_at >= ?", (user_id, month_start), one=True)
+    tokens_used = r_month["t"] if r_month else 0
+    tokens_limit = plan.get("monthly_tokens", 0)
+
+    rpm_used = 0
+    rpm_limit = plan.get("rpm", 30)
     if key_id:
         minute_ago = (datetime.now() - timedelta(seconds=60)).strftime(db.FMT)
-        r = db.q("SELECT COUNT(*) c FROM usage_logs WHERE key_id=? AND created_at >= ?",
-                 (key_id, minute_ago), one=True)
-        if r["c"] >= plan["rpm"]:
-            raise ApiError(429, f"เกินอัตรา {plan['rpm']} คำขอ/นาที — โปรดลดความถี่", "rate_limit_error")
+        r_rpm = db.q("SELECT COUNT(*) c FROM usage_logs WHERE key_id=? AND created_at >= ?",
+                     (key_id, minute_ago), one=True)
+        rpm_used = r_rpm["c"] if r_rpm else 0
+
+    warnings = []
+    if daily_limit > 0:
+        ratio_daily = daily_used / daily_limit
+        if ratio_daily >= 0.95:
+            warnings.append(f"Daily requests at {ratio_daily*100:.0f}% ({daily_used}/{daily_limit})")
+        elif ratio_daily >= 0.80:
+            warnings.append(f"Daily requests at {ratio_daily*100:.0f}% ({daily_used}/{daily_limit})")
+
+    if tokens_limit > 0:
+        ratio_tokens = tokens_used / tokens_limit
+        if ratio_tokens >= 0.95:
+            warnings.append(f"Monthly tokens at {ratio_tokens*100:.0f}% ({tokens_used:,}/{tokens_limit:,})")
+        elif ratio_tokens >= 0.80:
+            warnings.append(f"Monthly tokens at {ratio_tokens*100:.0f}% ({tokens_used:,}/{tokens_limit:,})")
+
+    return {
+        "daily_limit": daily_limit,
+        "daily_used": daily_used,
+        "daily_remaining": max(0, daily_limit - daily_used),
+        "tokens_limit": tokens_limit,
+        "tokens_used": tokens_used,
+        "tokens_remaining": max(0, tokens_limit - tokens_used),
+        "rpm_limit": rpm_limit,
+        "rpm_used": rpm_used,
+        "rpm_remaining": max(0, rpm_limit - rpm_used),
+        "warning": " | ".join(warnings) if warnings else "",
+    }
+
+
+def check_quota(user_id: int, key_id: int | None, plan: dict) -> dict:
+    info = get_rate_limit_info(user_id, key_id, plan)
+    if info["daily_used"] >= info["daily_limit"]:
+        raise ApiError(429, f"ครบโควตา {info['daily_limit']:,} คำขอ/วัน ของแพ็กเกจ {plan['name_th']} แล้ว "
+                            f"(ต่ออายุ/อัปเกรดได้ที่หน้า Billing)", "quota_error")
+    if info["tokens_used"] >= info["tokens_limit"]:
+        raise ApiError(429, f"ครบโควตา {info['tokens_limit']:,} tokens/เดือน แล้ว "
+                            f"(ต่ออายุ/อัปเกรดได้ที่หน้า Billing)", "quota_error")
+    if key_id and info["rpm_used"] >= info["rpm_limit"]:
+        raise ApiError(429, f"เกินอัตรา {info['rpm_limit']} คำขอ/นาที — โปรดลดความถี่ (Rate limit exceeded)", "rate_limit_error")
+    return info
+
 
 
 def record(user_id: int, key_id: int | None, alias: str, provider: str, backend_model: str,

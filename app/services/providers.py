@@ -9,23 +9,64 @@ from .. import config
 log = logging.getLogger("tah.providers")
 
 FREE_PRIORITY = [
-    "deepseek/deepseek-chat-v3-0324:free",
+    "openrouter/free",
+    "google/gemma-4-31b-it:free",
     "meta-llama/llama-3.3-70b-instruct:free",
-    "qwen/qwen3-235b-a22b:free",
-    "google/gemma-3-27b-it:free",
+    "google/gemma-4-26b-a4b-it:free",
+    "nvidia/nemotron-3-super-120b-a12b:free",
     "mistralai/mistral-small-3.2-24b-instruct:free",
-    "deepseek/deepseek-r1-0528:free",
 ]
 CHEAP_PRIORITY = [
-    "deepseek/deepseek-chat-v3.1",
-    "google/gemini-2.0-flash-001",
+    "google/gemini-2.5-flash-lite",
+    "mistralai/mistral-small-24b-instruct-2501",
+    "deepseek/deepseek-chat",
+    "meta-llama/llama-3.3-70b-instruct",
     "openai/gpt-4o-mini",
     "google/gemini-2.5-flash",
-    "meta-llama/llama-3.1-8b-instruct",
-    "mistralai/mistral-nemo",
 ]
 
 _cache = {"models_ts": 0.0, "models": [], "ollama_ts": 0.0, "ollama": []}
+
+
+class CircuitBreaker:
+    """Circuit Breaker ป้องกันการรอ Timeout ซ้ำๆ เมื่อ backend/model มีปัญหา"""
+    def __init__(self, failure_threshold: int = 3, cooldown_seconds: float = 60.0):
+        self.failure_threshold = failure_threshold
+        self.cooldown_seconds = cooldown_seconds
+        self._failures: dict[str, int] = {}
+        self._tripped_until: dict[str, float] = {}
+
+    def _key(self, provider: str, model: str) -> str:
+        return f"{provider}:{model}"
+
+    def is_available(self, provider: str, model: str) -> bool:
+        key = self._key(provider, model)
+        tripped = self._tripped_until.get(key, 0.0)
+        now = time.time()
+        if tripped > now:
+            return False
+        if tripped != 0.0:
+            # Cooldown ครบแล้ว ให้เข้าสู่สถานะ Half-Open เพื่อลองใหม่
+            self._tripped_until.pop(key, None)
+            self._failures[key] = 0
+        return True
+
+    def record_success(self, provider: str, model: str) -> None:
+        key = self._key(provider, model)
+        self._failures.pop(key, None)
+        self._tripped_until.pop(key, None)
+
+    def record_failure(self, provider: str, model: str) -> None:
+        key = self._key(provider, model)
+        count = self._failures.get(key, 0) + 1
+        self._failures[key] = count
+        if count >= self.failure_threshold:
+            self._tripped_until[key] = time.time() + self.cooldown_seconds
+            log.warning("Circuit breaker tripped for %s: cooldown %.0fs (failures: %d)",
+                        key, self.cooldown_seconds, count)
+
+
+circuit_breaker = CircuitBreaker()
 
 
 class BackendError(Exception):
@@ -142,9 +183,12 @@ async def chat_once(provider: str, model: str, payload: dict, timeout: float = 1
             r = await c.post(f"{_base(provider)}/chat/completions", json=body,
                              headers=_headers(provider))
     except httpx.HTTPError as e:
+        circuit_breaker.record_failure(provider, model)
         raise BackendError(f"{provider}: เชื่อมต่อไม่สำเร็จ ({type(e).__name__})")
     if r.status_code != 200:
+        circuit_breaker.record_failure(provider, model)
         raise BackendError(f"{provider}/{model}: HTTP {r.status_code} {r.text[:160]}")
+    circuit_breaker.record_success(provider, model)
     return r.json()
 
 
@@ -160,12 +204,16 @@ async def chat_stream(provider: str, model: str, payload: dict, timeout: float =
                                    json=body, headers=_headers(provider))
         resp = await client.send(req, stream=True)
     except httpx.HTTPError as e:
+        circuit_breaker.record_failure(provider, model)
         raise BackendError(f"{provider}: เชื่อมต่อไม่สำเร็จ ({type(e).__name__})")
     if resp.status_code != 200:
         text = (await resp.aread()).decode("utf-8", "replace")[:160]
         await resp.aclose()
         await client.aclose()
+        circuit_breaker.record_failure(provider, model)
         raise BackendError(f"{provider}/{model}: HTTP {resp.status_code} {text}")
+
+    circuit_breaker.record_success(provider, model)
 
     async def gen():
         try:
@@ -182,3 +230,4 @@ async def chat_stream(provider: str, model: str, payload: dict, timeout: float =
             await client.aclose()
 
     return gen()
+

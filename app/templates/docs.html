@@ -99,6 +99,22 @@ console.log(resp.choices[0].message.content);</pre>
       </table>
     </div>
 
+    <h2>Response Headers (Observability &amp; Rate Limits)</h2>
+    <p>ทุก Request จะมี Response Headers ส่งกลับมาเพื่อความสะดวกในการ Monitor และ Debug:</p>
+    <div class="card table-card">
+      <table class="table">
+        <tr><th>Header</th><th>คำอธิบาย</th><th>ตัวอย่าง</th></tr>
+        <tr><td><code>X-Thai-Hub-Backend</code></td><td>Provider และ Model จริงที่ประมวลผลคำขอ</td><td><code>openrouter:google/gemini-2.5-flash-lite</code></td></tr>
+        <tr><td><code>X-Thai-Hub-Latency-Ms</code></td><td>ความเร็ว Latency ในการประมวลผล (ms)</td><td><code>245</code></td></tr>
+        <tr><td><code>X-Thai-Hub-Attempts</code></td><td>จำนวน Backend ที่พยายาม (1 = สำเร็จรอบแรก, &gt;1 = มี Failover)</td><td><code>1</code></td></tr>
+        <tr><td><code>X-RateLimit-Limit-Requests</code></td><td>โควตาคำขอรายวันตามแพ็กเกจ</td><td><code>300</code></td></tr>
+        <tr><td><code>X-RateLimit-Remaining-Requests</code></td><td>จำนวนคำขอรายวันที่ยังเหลืออยู่</td><td><code>299</code></td></tr>
+        <tr><td><code>X-RateLimit-Limit-Tokens</code></td><td>โควตา Token รายเดือนตามแพ็กเกจ</td><td><code>3000000</code></td></tr>
+        <tr><td><code>X-RateLimit-Remaining-Tokens</code></td><td>จำนวน Token รายเดือนที่ยังเหลืออยู่</td><td><code>2998450</code></td></tr>
+        <tr><td><code>X-RateLimit-Limit-RPM</code></td><td>ขีดจำกัดความถี่คำขอต่อนาที (RPM)</td><td><code>30</code></td></tr>
+      </table>
+    </div>
+
     <h2>รหัส error ที่พบบ่อย</h2>
     <div class="card table-card">
       <table class="table">

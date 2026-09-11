@@ -3,14 +3,21 @@ import time
 
 from .. import config
 from ..api_errors import ApiError
-from .providers import BackendError, chat_once, chat_stream, ollama_models, pick_models
+from .providers import (
+    BackendError,
+    chat_once,
+    chat_stream,
+    circuit_breaker,
+    ollama_models,
+    pick_models,
+)
 
 ALIAS_INFO = {
-    "thai-hub/auto": "เลือกเส้นทางอัตโนมัติ คุ้มค่าสุดตามแพ็กเกจ (แนะนำ)",
-    "thai-hub/local": "AI รันในเครื่องเซิร์ฟเวอร์ ฟรี ไม่ออกบิลนอกบ้าน",
-    "thai-hub/free": "โมเดลฟรีคุณภาพสูงจาก AI ระดับโลก (Llama 3.3 70B, DeepSeek V3 ฯลฯ)",
-    "thai-hub/cheap": "โมเดลพรีเมียมราคาถูกที่งานดี (DeepSeek V3.1, Gemini Flash, GPT-4o-mini)",
-    "thai-hub/best": "สายคุณภาพ — ลองตัวที่ฉลาดที่สุดก่อน แล้วค่อยลดหลั่น",
+    "thai-hub/auto": "Smart Failover: เลือกลำดับ backend ที่คุ้มค่าและ latency ต่ำสุดอัตโนมัติตาม Tier (แนะนำ)",
+    "thai-hub/local": "Local Private AI (Ollama) ฟรีไม่อั้น Zero Data Leakage",
+    "thai-hub/free": "Cloud Free Tier (Gemma 4, Llama 3.3 70B, Nemotron 120B)",
+    "thai-hub/cheap": "Cost-Performance Leaders (Gemini 2.5 Flash Lite, Mistral Small 24B, DeepSeek V3)",
+    "thai-hub/best": "Reasoning & Quality First (DeepSeek R1, DeepSeek V3, Gemini Flash)",
 }
 # alias นี้ต้องใช้แพ็กเกจ tier ขั้นต่ำเท่าไร
 ALIAS_TIER = {"thai-hub/auto": 0, "thai-hub/local": 0, "thai-hub/free": 0,
@@ -66,25 +73,34 @@ async def resolve_chain(model: str, plan: dict | None) -> list[tuple[str, str]]:
     if model in locs:
         return [("ollama", model)]
 
-    # ส่งชื่อโมเดลตรงๆ จาก OpenRouter (เช่น google/gemini-2.0-flash-001) — เฉพาะแพ็กเกจที่เปิด
+    # ส่งชื่อโมเดลตรงๆ จาก OpenRouter (เช่น google/gemini-2.5-flash-lite) — เฉพาะแพ็กเกจที่เปิด
     if (plan or {}).get("passthrough"):
         return [("openrouter", model)]
     raise ApiError(403, f"โมเดล '{model}' ใช้ได้เฉพาะแพ็กเกจ Pro ขึ้นไป — หรือใช้ alias thai-hub/* แทน")
 
 
 async def run_chat(model: str, payload: dict, stream: bool, plan: dict | None):
-    """ไล่ลองทีละ backend ตามสาย ตัวไหนตอบกลับมาก่อนชนะ — คืน (provider, model, result, connect_ms)"""
+    """ไล่ลองทีละ backend ตามสาย ตัวไหนตอบกลับมาก่อนชนะ — คืน (provider, model, result, connect_ms, attempts)"""
     chain = await resolve_chain(model, plan)
     errors: list[str] = []
-    for provider, m in chain:
+
+    # กรองเฉพาะ backend ที่ circuit breaker ยังเปิดรับอยู่ก่อน (ยกเว้นทุกตัวติดหมด ถึงจะยอมลองทุกตัว)
+    healthy_chain = [b for b in chain if circuit_breaker.is_available(b[0], b[1])]
+    chain_to_try = healthy_chain if healthy_chain else chain
+
+    attempts = 0
+    for provider, m in chain_to_try:
+        attempts += 1
         t0 = time.time()
         try:
             if stream:
                 gen = await chat_stream(provider, m, payload)
             else:
                 gen = await chat_once(provider, m, payload)
-            return provider, m, gen, int((time.time() - t0) * 1000)
+            return provider, m, gen, int((time.time() - t0) * 1000), attempts
         except BackendError as e:
             errors.append(str(e))
-    detail = " | ".join(errors[-3:])
-    raise ApiError(502, f"ทุก backend ล้มเหลว: {detail}", "api_error")
+
+    detail = " | ".join(errors[-3:]) if errors else "ไม่มี backend ที่พร้อมใช้งาน"
+    raise ApiError(502, f"ทุก backend ล้มเหลว (พยายาม {attempts} ครั้ง): {detail}", "api_error")
+

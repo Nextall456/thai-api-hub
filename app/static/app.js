@@ -9,8 +9,14 @@
       const el = document.getElementById(btn.dataset.copyTarget);
       text = el ? el.textContent : "";
     } else {
-      const code = btn.closest(".card, .code")?.querySelector("pre");
-      text = code ? code.textContent : "";
+      const box = btn.closest(".code-box");
+      if (box) {
+        const activePane = box.querySelector(".code-pane.active pre");
+        text = activePane ? activePane.textContent : "";
+      } else {
+        const code = btn.closest(".card, .code")?.querySelector("pre");
+        text = code ? code.textContent : "";
+      }
     }
     if (text) {
       navigator.clipboard.writeText(text.trim()).then(() => {
@@ -20,6 +26,21 @@
       });
     }
   });
+
+  // สลับแท็บโค้ดในหน้าแรก (cURL, Python, TS, Go)
+  document.addEventListener("click", function (e) {
+    const tab = e.target.closest(".code-tab");
+    if (!tab) return;
+    const target = tab.dataset.lang;
+    const container = tab.closest(".code-box");
+    if (!container) return;
+    container.querySelectorAll(".code-tab").forEach(t => t.classList.remove("active"));
+    container.querySelectorAll(".code-pane").forEach(p => p.classList.remove("active"));
+    tab.classList.add("active");
+    const pane = container.querySelector(`.code-pane[data-lang="${target}"]`);
+    if (pane) pane.classList.add("active");
+  });
+
 
   // ห้องทดลอง AI
   const send = document.getElementById("pg-send");

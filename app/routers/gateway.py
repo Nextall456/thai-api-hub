@@ -74,7 +74,7 @@ async def chat_completions(request: Request, authorization: str = Header(default
     if not plan:
         raise ApiError(402, "ยังไม่มีแพ็กเกจที่ใช้งานได้ (ทดลองใช้อาจหมดอายุแล้ว) — "
                             "สมัคร/ต่ออายุที่หน้า Billing ของเว็บ Thai API Hub")
-    usage_svc.check_quota(user["id"], key["id"], plan)
+    quota_info = usage_svc.check_quota(user["id"], key["id"], plan)
 
     try:
         body = await request.json()
@@ -91,12 +91,26 @@ async def chat_completions(request: Request, authorization: str = Header(default
     pt_est = sum(usage_svc.est_tokens(str(m.get("content") or "")) for m in messages)
     t0 = time.time()
     try:
-        provider, backend_model, result, _connect_ms = await router_engine.run_chat(
+        provider, backend_model, result, _connect_ms, attempts = await router_engine.run_chat(
             model, payload, stream, plan)
     except ApiError:
         usage_svc.record(user["id"], key["id"], model, "none", "", 0, 0,
                          int((time.time() - t0) * 1000), status="fail")
         raise
+
+    base_headers = {
+        "X-Thai-Hub-Backend": f"{provider}:{backend_model}",
+        "X-Thai-Hub-Attempts": str(attempts),
+        "X-Thai-Hub-Failover": "true" if attempts > 1 else "false",
+        "X-RateLimit-Limit-Requests": str(quota_info["daily_limit"]),
+        "X-RateLimit-Remaining-Requests": str(max(0, quota_info["daily_remaining"] - 1)),
+        "X-RateLimit-Limit-Tokens": str(quota_info["tokens_limit"]),
+        "X-RateLimit-Remaining-Tokens": str(max(0, quota_info["tokens_remaining"])),
+        "X-RateLimit-Limit-RPM": str(quota_info["rpm_limit"]),
+        "X-RateLimit-Remaining-RPM": str(max(0, quota_info["rpm_remaining"] - 1)),
+    }
+    if quota_info["warning"]:
+        base_headers["X-Thai-Hub-Warning"] = quota_info["warning"]
 
     if not stream:
         latency = int((time.time() - t0) * 1000)
@@ -111,7 +125,12 @@ async def chat_completions(request: Request, authorization: str = Header(default
         cost = _cost(provider, backend_model, pt, ct)
         usage_svc.record(user["id"], key["id"], model, provider, backend_model,
                          pt, ct, latency, "ok", cost)
-        return JSONResponse(result, headers={"X-Thai-Hub-Backend": f"{provider}:{backend_model}"})
+        resp_headers = {
+            **base_headers,
+            "X-Thai-Hub-Latency-Ms": str(latency),
+            "X-RateLimit-Remaining-Tokens": str(max(0, quota_info["tokens_remaining"] - (pt + ct))),
+        }
+        return JSONResponse(result, headers=resp_headers)
 
     # ---------- streaming ----------
     ct_chars = 0
@@ -147,6 +166,10 @@ async def chat_completions(request: Request, authorization: str = Header(default
             usage_svc.record(user["id"], key["id"], model, provider, backend_model,
                              pt, ct, latency, "ok", _cost(provider, backend_model, pt, ct))
 
-    return StreamingResponse(sse(), media_type="text/event-stream",
-                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no",
-                                      "X-Thai-Hub-Backend": f"{provider}:{backend_model}"})
+    stream_headers = {
+        **base_headers,
+        "Cache-Control": "no-cache",
+        "X-Accel-Buffering": "no",
+    }
+    return StreamingResponse(sse(), media_type="text/event-stream", headers=stream_headers)
+

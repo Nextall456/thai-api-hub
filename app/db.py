@@ -146,18 +146,18 @@ CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_logs(created_at);
 
 # แพ็กเกจขาย (features_th คั่นรายการด้วย |)
 PLANS = [
-    dict(code="trial", name_th="ทดลองใช้ฟรี", tier=0, price_month_thb=0, price_year_thb=0,
+    dict(code="trial", name_th="Hacker Sandbox", tier=0, price_month_thb=0, price_year_thb=0,
          daily_requests=30, monthly_tokens=300_000, rpm=10, chain="local_first", passthrough=0, sort=0,
-         features_th="โมเดลในเครื่อง (Local AI) + โมเดลฟรีคุณภาพสูงจาก AI ระดับโลก|30 คำขอ/วัน|300,000 tokens/เดือน|ใช้ฟรี 7 วันหลังสมัคร"),
-    dict(code="starter", name_th="เริ่มต้น", tier=1, price_month_thb=199, price_year_thb=1990,
+         features_th="Local Ollama (Qwen 2.5) + Free Cloud AI (Gemma 4, Llama 3.3)|30 requests/day · 10 RPM|300,000 tokens/month|ทดลองฟรี 7 วัน ไม่ต้องผูกบัตร|Circuit Breaker Failover"),
+    dict(code="starter", name_th="Builder / Indie Dev", tier=1, price_month_thb=199, price_year_thb=1990,
          daily_requests=300, monthly_tokens=3_000_000, rpm=30, chain="local_first", passthrough=0, sort=1,
-         features_th="+ โมเดลราคาประหยัด (DeepSeek V3, Gemini Flash, GPT-4o-mini)|300 คำขอ/วัน|3 ล้าน tokens/เดือน|30 คำขอ/นาที|ชำระผ่านโอนธนาคาร/QR"),
-    dict(code="pro", name_th="โปร", tier=2, price_month_thb=499, price_year_thb=4990,
+         features_th="+ Cost-Performance Leaders (Gemini 2.5 Flash Lite, Mistral Small 24B, DeepSeek V3)|300 requests/day · 30 RPM|3,000,000 tokens/month|Context สูงสุด 1,000,000 tokens|Latency เฉลี่ย ~300ms"),
+    dict(code="pro", name_th="Pro Engineer / Scale", tier=2, price_month_thb=499, price_year_thb=4990,
          daily_requests=1_500, monthly_tokens=15_000_000, rpm=60, chain="quality_first", passthrough=1, sort=2,
-         features_th="ทุกโมเดล + เลือกโมเดล AI ระดับโลกได้เองทุกตัว|เส้นทางคุณภาพก่อน: ฟรี → พรีเมียม → Local|1,500 คำขอ/วัน|15 ล้าน tokens/เดือน|60 คำขอ/นาที|รองรับ alias โมเดลทั้ง 5 แบบ"),
-    dict(code="business", name_th="ธุรกิจ", tier=3, price_month_thb=1_499, price_year_thb=14_990,
+         features_th="ทุกโมเดล + DeepSeek R1 Reasoning + Direct Model Passthrough|1,500 requests/day · 60 RPM|15,000,000 tokens/month|Quality-First Intelligent Failover|รองรับ Streaming & SSE เต็มรูปแบบ"),
+    dict(code="business", name_th="Team / High-Concurrency", tier=3, price_month_thb=1_499, price_year_thb=14_990,
          daily_requests=10_000, monthly_tokens=80_000_000, rpm=120, chain="quality_first", passthrough=1, sort=3,
-         features_th="สูงสุดทุกอย่างของแพ็กเกจโปร|10,000 คำขอ/วัน|80 ล้าน tokens/เดือน|120 คำขอ/นาที|เหมาะกับทีม/เอเจนซี่|สนับสนุนลำดับแรก"),
+         features_th="ทุกฟีเจอร์ระดับสูงสุด + Dedicated Priority Routing|10,000 requests/day · 120 RPM|80,000,000 tokens/month|High-Throughput Concurrency|Priority SLA & Direct Dev Support"),
 ]
 
 
