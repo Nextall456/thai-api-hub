@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b132b"/>
+      <stop offset="50%" stop-color="#1c2541"/>
+      <stop offset="100%" stop-color="#3a0ca3"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00d4ff"/>
+      <stop offset="50%" stop-color="#0066ff"/>
+      <stop offset="100%" stop-color="#7209b7"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="url(#bgGrad)" stroke="url(#accentGrad)" stroke-width="2"/>
+  
+  <!-- API symbol - curly braces with connection -->
+  <g filter="url(#glow)">
+    <!-- Left brace -->
+    <path d="M30 50 
+             Q25 50, 25 45
+             Q25 40, 30 40
+             Q35 40, 35 50
+             Q35 60, 30 60
+             Q25 60, 25 55
+             Q25 50, 30 50" 
+          fill="none" stroke="url(#accentGrad)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Right brace -->
+    <path d="M70 50 
+             Q75 50, 75 45
+             Q75 40, 70 40
+             Q65 40, 65 50
+             Q65 60, 70 60
+             Q75 60, 75 55
+             Q75 50, 70 50" 
+          fill="none" stroke="url(#accentGrad)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Connection line between braces -->
+    <line x1="40" y1="50" x2="60" y2="50" stroke="url(#accentGrad)" stroke-width="2.5" stroke-dasharray="4,3" opacity="0.8"/>
+    
+    <!-- Center dot (connection point) -->
+    <circle cx="50" cy="50" r="4" fill="url(#accentGrad)">
+      <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+  
+  <!-- Thai flag accent (subtle) -->
+  <g opacity="0.15">
+    <rect x="10" y="10" width="80" height="12" fill="#a51931"/>
+    <rect x="10" y="22" width="80" height="12" fill="#ffffff"/>
+    <rect x="10" y="34" width="80" height="12" fill="#2d2a4a"/>
+    <rect x="10" y="46" width="80" height="12" fill="#ffffff"/>
+    <rect x="10" y="58" width="80" height="12" fill="#a51931"/>
+  </g>
+</svg>
