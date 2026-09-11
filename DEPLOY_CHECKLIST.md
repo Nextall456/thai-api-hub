@@ -33,10 +33,10 @@
 
 | Type | Host | Value | TTL |
 |---|---|---|---|
-| **CNAME** | `@` | `7pumj9ya.up.railway.app` | Automatic |
+| **CNAME** | `@` | `5paqfjci.up.railway.app` | Automatic |
 | **TXT** | `_railway-verify` | `railway-verify=d4b1433abfeecd156ec0a20fdcc078800a6c9b24f4a883977303a25a77843afc` | Automatic |
 
-> 💡 หากมี `www` ให้เพิ่ม CNAME `www` → `7pumj9ya.up.railway.app` ด้วย
+> 💡 หากมี `www` ให้เพิ่ม CNAME `www` → `5paqfjci.up.railway.app` ด้วย
 
 **รอ DNS propagate 5-60 นาที** แล้วทดสอบ: `https://aimoneyfree.online/health`
 
