@@ -45,7 +45,7 @@ async def ai_reply(text: str) -> str:
         "max_tokens": 400,
     }
     try:
-        provider, _model, result, _ = await run_chat("thai-hub/auto", payload, False, None)
+        provider, _model, result, _latency, _attempts = await run_chat("thai-hub/auto", payload, False, None)
         content = result["choices"][0]["message"]["content"]
         return (content or "ขออภัย ผมตอบไม่ได้ตอนนี้ครับ").strip()[:3000]
     except Exception as e:
