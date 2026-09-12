@@ -89,6 +89,7 @@ async def _send(chat_id: int, text: str) -> None:
 
 async def _handle(update: dict) -> None:
     m = _extract(update)
+    log.info("bot received message: chat_id=%s text=%s", m.get("chat_id"), m.get("text", "")[:50])
     if not m["chat_id"] or not m["text"]:
         return
     # ข้อความจากแชทแอดมินเอง ไม่ต้องให้ AI ตอบ
@@ -97,6 +98,7 @@ async def _handle(update: dict) -> None:
 
     is_new = await _is_new_chat(m["chat_id"])
     _record_chat(m)
+    log.info("recorded chat: chat_id=%s", m.get("chat_id"))
 
     if is_new:
         name = f"{m['first_name']} {m['last_name']}".strip() or m["username"] or str(m["chat_id"])
