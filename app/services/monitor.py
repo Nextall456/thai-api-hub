@@ -107,20 +107,37 @@ def render_prometheus(s: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
+# alert deduplication: จำ state ล่าสุดที่แจ้งไป (key -> (signature, timestamp))
+_last_alerts: dict[str, tuple[str, float]] = {}
+_ALERT_REPEAT_HOURS = 6  # แจ้งซ้ำได้ทุก 6 ชม. ถ้าสถานะเดิม
+
+
+def _should_alert(key: str, signature: str) -> bool:
+    """แจ้งเฉพาะครั้งแรกที่เห็นสถานะนี้ หรือครบ 6 ชม. (กันเด้งทุก 10 นาที)"""
+    now = time.time()
+    last = _last_alerts.get(key)
+    if last and last[0] == signature and now - last[1] < _ALERT_REPEAT_HOURS * 3600:
+        return False
+    _last_alerts[key] = (signature, now)
+    return True
+
+
 async def check_and_alert() -> None:
     """แจ้งเตือน Telegram เมื่อ error rate > 20% (เรียกทุก 10 นาที)"""
     from . import telegram as tg
     s = collect_stats()
     if s["requests_24h"] >= 20 and s["errors_24h"] / s["requests_24h"] > 0.20:
         rate = s["errors_24h"] / s["requests_24h"] * 100
-        await tg.send_telegram(
-            f"🚨 <b>Alert: Error Rate สูง!</b>\n"
-            f"⚠ {rate:.1f}% ของ {s['requests_24h']} คำขอใน 24 ชม. ล้มเหลว\n"
-            f"🔎 ตรวจสอบ: {config.SITE_URL}/admin")
+        if _should_alert("error_rate", f"{rate:.0f}%"):
+            await tg.send_telegram(
+                f"🚨 <b>Alert: Error Rate สูง!</b>\n"
+                f"⚠ {rate:.1f}% ของ {s['requests_24h']} คำขอใน 24 ชม. ล้มเหลว\n"
+                f"🔎 ตรวจสอบ: {config.SITE_URL}/admin")
     if s["pending_payments"] >= 1:
-        await tg.send_telegram(
-            f"⏳ <b>มีบิลรออนุมัติ {s['pending_payments']} รายการ</b>\n"
-            f"→ {config.SITE_URL}/admin")
+        if _should_alert("pending_payments", str(s["pending_payments"])):
+            await tg.send_telegram(
+                f"⏳ <b>มีบิลรออนุมัติ {s['pending_payments']} รายการ</b>\n"
+                f"→ {config.SITE_URL}/admin")
 
 
 async def daily_report() -> None:
