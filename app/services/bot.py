@@ -1,6 +1,8 @@
 """Telegram Bot ฝ่ายขาย: ลูกค้าทักถาม → AI ตอบ + แจ้งเตือนแอดมินเมื่อมีคนสนใจ"""
 import asyncio
 import logging
+import time
+from collections import defaultdict, deque
 
 import httpx
 
