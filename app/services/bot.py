@@ -12,7 +12,9 @@ from .router_engine import run_chat
 
 log = logging.getLogger("tah.bot")
 
-SYSTEM_PROMPT = (
+# Track processed update_ids to prevent duplicate processing
+_processed_updates: set[int] = set()
+_MAX_PROCESSED = 1000  # Keep last 1000 update_ids
     "คุณคือ 'ฮับบอท' ผู้ช่วยฝ่ายขายของ Thai API Hub (เว็บขาย AI API รายเดือน/รายปีของไทย) "
     "ตอบภาษาไทยสั้น กระชับ เป็นกันเอง ไม่เกิน 6 ประโยคต่อครั้ง\n"
     "ข้อมูลสินค้า:\n"
@@ -171,7 +173,18 @@ async def run_polling() -> None:
                 if updates:
                     log.info("poll got %d updates", len(updates))
                 for upd in updates:
-                    offset = upd["update_id"] + 1
+                    update_id = upd["update_id"]
+                    # Deduplication: skip already processed updates
+                    if update_id in _processed_updates:
+                        log.debug("skipping duplicate update_id=%s", update_id)
+                        offset = update_id + 1  # Still advance offset
+                        continue
+                    # Track processed update
+                    _processed_updates.add(update_id)
+                    if len(_processed_updates) > _MAX_PROCESSED:
+                        # Remove oldest entries (simple cleanup)
+                        _processed_updates.clear()
+                    offset = update_id + 1
                     try:
                         await _handle(upd)
                     except Exception as e:
