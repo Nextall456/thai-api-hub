@@ -78,7 +78,21 @@ def _record_chat(m: dict) -> None:
          (m["chat_id"], name, m["username"], now, now, now, name))
 
 
+# Rate limiter for outgoing bot messages (per chat)
+_bot_msg_rate: dict[int, deque] = defaultdict(deque)
+
+
 async def _send(chat_id: int, text: str) -> None:
+    # Rate limit: 10 messages per minute per chat
+    now = time.time()
+    bucket = _bot_msg_rate[chat_id]
+    while bucket and bucket[0] < now - 60:
+        bucket.popleft()
+    if len(bucket) >= 10:
+        log.warning("bot send rate limited for chat_id=%s", chat_id)
+        return
+    bucket.append(now)
+    
     try:
         async with httpx.AsyncClient(timeout=15) as c:
             await c.post(f"https://api.telegram.org/bot{config.TELEGRAM_BOT_TOKEN}/sendMessage",
@@ -91,6 +105,9 @@ async def _handle(update: dict) -> None:
     m = _extract(update)
     log.info("bot received message: chat_id=%s text=%s", m.get("chat_id"), m.get("text", "")[:50])
     if not m["chat_id"] or not m["text"]:
+        return
+    # ข้อความจากบอทเอง (bot user id) ไม่ต้องตอบ
+    if m.get("from", {}).get("is_bot"):
         return
     # ข้อความจากแชทแอดมินเอง ไม่ต้องให้ AI ตอบ
     if str(m["chat_id"]) == config.TELEGRAM_CHAT_ID:
