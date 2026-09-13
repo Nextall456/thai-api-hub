@@ -15,6 +15,8 @@ log = logging.getLogger("tah.bot")
 # Track processed update_ids to prevent duplicate processing
 _processed_updates: set[int] = set()
 _MAX_PROCESSED = 1000  # Keep last 1000 update_ids
+
+SYSTEM_PROMPT = (
     "คุณคือ 'ฮับบอท' ผู้ช่วยฝ่ายขายของ Thai API Hub (เว็บขาย AI API รายเดือน/รายปีของไทย) "
     "ตอบภาษาไทยสั้น กระชับ เป็นกันเอง ไม่เกิน 6 ประโยคต่อครั้ง\n"
     "ข้อมูลสินค้า:\n"
@@ -39,22 +41,12 @@ WELCOME = (
     "• โมเดลอะไรบ้าง"
 )
 
+# Rate limiter for outgoing bot messages (per chat)
+_bot_msg_rate: dict[int, deque] = defaultdict(deque)
 
-async def ai_reply(text: str) -> str:
-    payload = {
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": text[:2000]},
-        ],
-        "max_tokens": 400,
-    }
-    try:
-        provider, _model, result, _latency, _attempts = await run_chat("thai-hub/auto", payload, False, None)
-        content = result["choices"][0]["message"]["content"]
-        return (content or "ขออภัย ผมตอบไม่ได้ตอนนี้ครับ").strip()[:3000]
-    except Exception as e:
-        log.warning("bot ai_reply failed: %s", e)
-        return "ขออภัยครับ ระบบตอบคำถามขัดข้องชั่วคราว — ติดต่อแอดมินได้ที่อีเมลในหน้าเว็บครับ"
+# Track processed update_ids to prevent duplicate processing
+_processed_updates: set[int] = set()
+_MAX_PROCESSED = 1000  # Keep last 1000 update_ids
 
 
 def _extract(update: dict):
@@ -96,13 +88,18 @@ async def _send(chat_id: int, text: str) -> None:
         log.warning("bot send rate limited for chat_id=%s", chat_id)
         return
     bucket.append(now)
-    
+
     try:
         async with httpx.AsyncClient(timeout=15) as c:
             await c.post(f"https://api.telegram.org/bot{config.TELEGRAM_BOT_TOKEN}/sendMessage",
                          json={"chat_id": chat_id, "text": text[:4000]})
     except Exception as e:
         log.warning("bot send failed: %s", e)
+
+
+# Track processed update_ids to prevent duplicate processing
+_processed_updates: set[int] = set()
+_MAX_PROCESSED = 1000  # Keep last 1000 update_ids
 
 
 async def _handle(update: dict) -> None:
@@ -152,6 +149,28 @@ async def _handle(update: dict) -> None:
 
     reply = await ai_reply(m["text"])
     await _send(m["chat_id"], reply)
+
+
+async def ai_reply(text: str) -> str:
+    payload = {
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": text[:2000]},
+        ],
+        "max_tokens": 400,
+    }
+    try:
+        provider, _model, result, _latency, _attempts = await run_chat("thai-hub/auto", payload, False, None)
+        content = result["choices"][0]["message"]["content"]
+        return (content or "ขออภัย ผมตอบไม่ได้ตอนนี้ครับ").strip()[:3000]
+    except Exception as e:
+        log.warning("bot ai_reply failed: %s", e)
+        return "ขออภัยครับ ระบบตอบคำถามขัดข้องชั่วคราว — ติดต่อแอดมินได้ที่อีเมลในหน้าเว็บครับ"
+
+
+# Track processed update_ids to prevent duplicate processing
+_processed_updates: set[int] = set()
+_MAX_PROCESSED = 1000  # Keep last 1000 update_ids
 
 
 async def run_polling() -> None:
