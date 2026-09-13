@@ -141,8 +141,9 @@ async def daily_report() -> None:
 
 
 async def monitor_loop() -> None:
-    """Background: health-alert ทุก 10 นาที + daily report เที่ยงคืน"""
+    """Background: health-alert ทุก 10 นาที + daily report เที่ยงคืน + cleanup ทุกชั่วโมง"""
     last_report_day = datetime.now().day
+    last_cleanup = datetime.now().hour
     while True:
         try:
             await asyncio.sleep(600)  # 10 นาที
@@ -154,6 +155,13 @@ async def monitor_loop() -> None:
             if now.day != last_report_day and now.hour == 0 and config.TELEGRAM_CHAT_ID:
                 await daily_report()
                 last_report_day = now.day
+            # cleanup: sessions หมดอายุ + log เก่าเกิน 90 วัน (ทุกชั่วโมง)
+            if now.hour != last_cleanup:
+                db.x("DELETE FROM sessions WHERE expires_at < ?", (db.now_str(),))
+                cutoff = (datetime.now() - timedelta(days=90)).strftime(db.FMT)
+                db.x("DELETE FROM usage_logs WHERE created_at < ?", (cutoff,))
+                db.x("DELETE FROM audit_logs WHERE created_at < ?", (cutoff,))
+                last_cleanup = now.hour
         except asyncio.CancelledError:
             return
         except Exception as e:

@@ -48,4 +48,4 @@ TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
 AUTO_VERIFY_PAYMENT = os.environ.get("AUTO_VERIFY_PAYMENT", "false").lower() == "true"
 
 TRIAL_DAYS = int(os.environ.get("TRIAL_DAYS", "7"))
-VERSION = "1.2.0"
+VERSION = "1.3.0"

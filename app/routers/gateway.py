@@ -76,6 +76,11 @@ async def chat_completions(request: Request, authorization: str = Header(default
                             "สมัคร/ต่ออายุที่หน้า Billing ของเว็บ Thai API Hub")
     quota_info = usage_svc.check_quota(user["id"], key["id"], plan)
 
+    # จำกัดขนาด request body (ป้องกัน memory exhaustion)
+    content_length = request.headers.get("content-length")
+    if content_length and int(content_length) > 2_000_000:  # 2 MB
+        raise ApiError(413, "request body ใหญ่เกิน 2 MB — ลดขนาดข้อความ (messages)")
+
     try:
         body = await request.json()
     except Exception:

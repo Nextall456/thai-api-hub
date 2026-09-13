@@ -12,9 +12,10 @@ from .router_engine import run_chat
 
 log = logging.getLogger("tah.bot")
 
-# Track processed update_ids to prevent duplicate processing
+# ---- dedup + rate limit state (กำหนดครั้งเดียว) ----
 _processed_updates: set[int] = set()
-_MAX_PROCESSED = 1000  # Keep last 1000 update_ids
+_MAX_PROCESSED = 1000
+_bot_msg_rate: dict[int, deque] = defaultdict(deque)
 
 SYSTEM_PROMPT = (
     "คุณคือ 'ฮับบอท' ผู้ช่วยฝ่ายขายของ Thai API Hub (เว็บขาย AI API รายเดือน/รายปีของไทย) "
@@ -41,23 +42,18 @@ WELCOME = (
     "• โมเดลอะไรบ้าง"
 )
 
-# Rate limiter for outgoing bot messages (per chat)
-_bot_msg_rate: dict[int, deque] = defaultdict(deque)
-
-# Track processed update_ids to prevent duplicate processing
-_processed_updates: set[int] = set()
-_MAX_PROCESSED = 1000  # Keep last 1000 update_ids
-
 
 def _extract(update: dict):
     msg = update.get("message") or update.get("edited_message") or {}
     chat = msg.get("chat") or {}
+    sender = msg.get("from") or {}
     return {
         "chat_id": chat.get("id"),
         "first_name": chat.get("first_name") or "",
         "last_name": chat.get("last_name") or "",
         "username": chat.get("username") or "",
         "text": (msg.get("text") or "").strip(),
+        "is_bot": bool(sender.get("is_bot")),
     }
 
 
@@ -74,12 +70,8 @@ def _record_chat(m: dict) -> None:
          (m["chat_id"], name, m["username"], now, now, now, name))
 
 
-# Rate limiter for outgoing bot messages (per chat)
-_bot_msg_rate: dict[int, deque] = defaultdict(deque)
-
-
 async def _send(chat_id: int, text: str) -> None:
-    # Rate limit: 10 messages per minute per chat
+    """ส่งข้อความ พร้อม rate limit 10 ข้อความ/นาที/แชท"""
     now = time.time()
     bucket = _bot_msg_rate[chat_id]
     while bucket and bucket[0] < now - 60:
@@ -88,7 +80,6 @@ async def _send(chat_id: int, text: str) -> None:
         log.warning("bot send rate limited for chat_id=%s", chat_id)
         return
     bucket.append(now)
-
     try:
         async with httpx.AsyncClient(timeout=15) as c:
             await c.post(f"https://api.telegram.org/bot{config.TELEGRAM_BOT_TOKEN}/sendMessage",
@@ -97,26 +88,35 @@ async def _send(chat_id: int, text: str) -> None:
         log.warning("bot send failed: %s", e)
 
 
-# Track processed update_ids to prevent duplicate processing
-_processed_updates: set[int] = set()
-_MAX_PROCESSED = 1000  # Keep last 1000 update_ids
+async def ai_reply(text: str) -> str:
+    payload = {
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": text[:2000]},
+        ],
+        "max_tokens": 400,
+    }
+    try:
+        _provider, _model, result, _latency, _attempts = await run_chat(
+            "thai-hub/auto", payload, False, None)
+        content = result["choices"][0]["message"]["content"]
+        return (content or "ขออภัย ผมตอบไม่ได้ตอนนี้ครับ").strip()[:3000]
+    except Exception as e:
+        log.warning("bot ai_reply failed: %s", e)
+        return "ขออภัยครับ ระบบตอบคำถามขัดข้องชั่วคราว — ติดต่อแอดมินได้ที่อีเมลในหน้าเว็บครับ"
 
 
 async def _handle(update: dict) -> None:
     m = _extract(update)
-    log.info("bot received message: chat_id=%s text=%s", m.get("chat_id"), m.get("text", "")[:50])
-    if not m["chat_id"] or not m["text"]:
-        return
-    # ข้อความจากบอทเอง (bot user id) ไม่ต้องตอบ
-    if m.get("from", {}).get("is_bot"):
+    if not m["chat_id"] or not m["text"] or m["is_bot"]:
         return
     # ข้อความจากแชทแอดมินเอง ไม่ต้องให้ AI ตอบ
     if str(m["chat_id"]) == config.TELEGRAM_CHAT_ID:
         return
 
+    log.info("bot received message: chat_id=%s text=%s", m["chat_id"], m["text"][:50])
     is_new = await _is_new_chat(m["chat_id"])
     _record_chat(m)
-    log.info("recorded chat: chat_id=%s", m.get("chat_id"))
 
     if is_new:
         name = f"{m['first_name']} {m['last_name']}".strip() or m["username"] or str(m["chat_id"])
@@ -151,28 +151,6 @@ async def _handle(update: dict) -> None:
     await _send(m["chat_id"], reply)
 
 
-async def ai_reply(text: str) -> str:
-    payload = {
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": text[:2000]},
-        ],
-        "max_tokens": 400,
-    }
-    try:
-        provider, _model, result, _latency, _attempts = await run_chat("thai-hub/auto", payload, False, None)
-        content = result["choices"][0]["message"]["content"]
-        return (content or "ขออภัย ผมตอบไม่ได้ตอนนี้ครับ").strip()[:3000]
-    except Exception as e:
-        log.warning("bot ai_reply failed: %s", e)
-        return "ขออภัยครับ ระบบตอบคำถามขัดข้องชั่วคราว — ติดต่อแอดมินได้ที่อีเมลในหน้าเว็บครับ"
-
-
-# Track processed update_ids to prevent duplicate processing
-_processed_updates: set[int] = set()
-_MAX_PROCESSED = 1000  # Keep last 1000 update_ids
-
-
 async def run_polling() -> None:
     """วนรับข้อความจาก Telegram (long-polling) — รันเป็น background task ใน FastAPI"""
     if not config.TELEGRAM_BOT_TOKEN:
@@ -193,15 +171,12 @@ async def run_polling() -> None:
                     log.info("poll got %d updates", len(updates))
                 for upd in updates:
                     update_id = upd["update_id"]
-                    # Deduplication: skip already processed updates
+                    # dedup: ข้าม update ที่ประมวลผลแล้ว (กัน loop ส่งซ้ำ)
                     if update_id in _processed_updates:
-                        log.debug("skipping duplicate update_id=%s", update_id)
-                        offset = update_id + 1  # Still advance offset
+                        offset = update_id + 1
                         continue
-                    # Track processed update
                     _processed_updates.add(update_id)
                     if len(_processed_updates) > _MAX_PROCESSED:
-                        # Remove oldest entries (simple cleanup)
                         _processed_updates.clear()
                     offset = update_id + 1
                     try:
