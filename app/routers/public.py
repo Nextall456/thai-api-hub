@@ -8,6 +8,7 @@ from fastapi.responses import RedirectResponse
 from .. import config, db, security
 from ..services.router_engine import ALIAS_INFO
 from ..services import telegram as tg_notify
+from ..services import notify_channels as nc
 from ..web import create_session, drop_session, get_user, render
 
 router = APIRouter()
@@ -81,6 +82,7 @@ async def signup_page(request: Request):
 @router.post("/signup")
 async def signup(request: Request, name: str = Form(""), email: str = Form(""),
                  password: str = Form("")):
+    ref_code = (request.query_params.get("ref") or "").strip().upper()
     name, email = name.strip()[:60], email.strip().lower()
     if not EMAIL_RE.match(email):
         return render(request, "signup.html", status_code=400, error="รูปแบบอีเมลไม่ถูกต้อง")
@@ -89,12 +91,18 @@ async def signup(request: Request, name: str = Form(""), email: str = Form(""),
     if db.q("SELECT id FROM users WHERE email=?", (email,), one=True):
         return render(request, "signup.html", status_code=400, error="อีเมลนี้สมัครไว้แล้ว — เข้าสู่ระบบแทน")
     role = "admin" if email in config.ADMIN_EMAILS else "user"
-    uid = db.x("INSERT INTO users(email, password_hash, name, role, trial_ends_at, created_at) "
-               "VALUES(?,?,?,?,?,?)",
+    # referral: หาผู้แนะนำจากรหัส (รหัสตัวเอง/ไม่พบ = ไม่ผูก)
+    referrer = None
+    if ref_code:
+        referrer = db.q("SELECT id FROM users WHERE referral_code=?", (ref_code,), one=True)
+    uid = db.x("INSERT INTO users(email, password_hash, name, role, trial_ends_at, created_at, "
+               "referral_code, referred_by) VALUES(?,?,?,?,?,?,?,?)",
                (email, security.hash_password(password), name, role,
-                db.plus(config.TRIAL_DAYS), db.now_str()))
+                db.plus(config.TRIAL_DAYS), db.now_str(),
+                security.new_referral_code(), referrer["id"] if referrer else None))
     user = db.q("SELECT * FROM users WHERE id=?", (uid,), one=True)
     await tg_notify.notify_new_user(user, "ทดลองใช้ฟรี 7 วัน")
+    nc.email_welcome(email, name)
     resp = RedirectResponse("/dashboard?msg=" + quote(
         f"สมัครสำเร็จ! ทดลองใช้ฟรี {config.TRIAL_DAYS} วัน — สร้าง API Key ได้เลย"), 303)
     create_session(resp, uid)

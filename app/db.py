@@ -164,6 +164,16 @@ PLANS = [
 def init_db() -> None:
     conn = get_db()
     conn.executescript(SCHEMA)
+    # ---- migrations (เพิ่มคอลัมน์แบบทนทานสำหรับ DB เดิม) ----
+    ucols = {r[1] for r in conn.execute("PRAGMA table_info(users)")}
+    if "referral_code" not in ucols:
+        conn.execute("ALTER TABLE users ADD COLUMN referral_code TEXT")
+    if "referred_by" not in ucols:
+        conn.execute("ALTER TABLE users ADD COLUMN referred_by INTEGER")
+    import secrets as _secrets
+    for (uid,) in conn.execute("SELECT id FROM users WHERE referral_code IS NULL OR referral_code=''"):
+        conn.execute("UPDATE users SET referral_code=? WHERE id=?", (_secrets.token_hex(4).upper(), uid))
+    conn.commit()
     for p in PLANS:
         cols = "code,name_th,tier,price_month_thb,price_year_thb,daily_requests,monthly_tokens,rpm,chain,passthrough,features_th,sort"
         ph = ",".join(f":{c}" for c in cols.split(","))

@@ -49,3 +49,18 @@ AUTO_VERIFY_PAYMENT = os.environ.get("AUTO_VERIFY_PAYMENT", "false").lower() == 
 
 TRIAL_DAYS = int(os.environ.get("TRIAL_DAYS", "7"))
 VERSION = "1.4.0"
+
+# Analytics (เว้นว่าง = ไม่เปิด)
+GA_ID = os.environ.get("GA_ID", "").strip()
+PLAUSIBLE_DOMAIN = os.environ.get("PLAUSIBLE_DOMAIN", "").strip()
+
+# Email notifications (SMTP) — เว้นว่าง = ไม่ส่งอีเมล
+SMTP_HOST = os.environ.get("SMTP_HOST", "").strip()
+SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
+SMTP_USER = os.environ.get("SMTP_USER", "").strip()
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "").strip()
+SMTP_FROM = os.environ.get("SMTP_FROM", "").strip()
+
+# LINE Messaging API — เว้นว่าง = ไม่ใช้ LINE
+LINE_CHANNEL_ACCESS_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN", "").strip()
+LINE_ADMIN_USER_ID = os.environ.get("LINE_ADMIN_USER_ID", "").strip()

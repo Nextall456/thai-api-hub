@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}แนะนำเพื่อน — {{ site_name }}{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    {% include "dash_nav.html" %}
+    <h1>แนะนำเพื่อน รับฟรี 30 วัน 🎁</h1>
+    <p class="muted">แชร์ลิงก์ของคุณให้เพื่อน — เมื่อเพื่อนสมัครและชำระเงินสำเร็จ <b>คุณได้ใช้งานฟรีเพิ่มทันที {{ reward_days }} วัน</b> ไม่จำกัดจำนวนคน</p>
+
+    <div class="card key-reveal">
+      <b>🔗 ลิงก์แนะนำของคุณ</b>
+      <div class="key-row"><code id="ref-link">{{ link }}</code>
+        <button class="btn btn-primary btn-sm" data-copy-target="ref-link">คัดลอกลิงก์</button></div>
+      <p class="muted" style="margin-top:8px">รหัสของคุณ: <code>{{ code }}</code> — เพื่อนสมัครผ่านลิงก์นี้ระบบผูกให้อัตโนมัติ</p>
+    </div>
+
+    <div class="grid grid-3 stat-cards">
+      <div class="card"><div class="stat-label">เพื่อนที่แนะนำ</div><div class="stat-value">{{ referred_count }}</div></div>
+      <div class="card"><div class="stat-label">รางวัลที่ได้รับ</div><div class="stat-value">{{ rewards_granted }}</div><div class="muted">ครั้ง × 30 วัน</div></div>
+      <div class="card"><div class="stat-label">รางวัลต่อรายการ</div><div class="stat-value">+{{ reward_days }} วัน</div></div>
+    </div>
+
+    {% if referred %}
+    <h3 style="margin-top:24px">รายชื่อเพื่อนที่แนะนำ</h3>
+    <div class="card table-card">
+      <table class="table">
+        <tr><th>อีเมล</th><th>ชื่อ</th><th>สมัครเมื่อ</th></tr>
+        {% for r in referred %}
+        <tr><td>{{ r.email }}</td><td>{{ r.name or '—' }}</td><td class="muted">{{ r.created_at[:10] }}</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

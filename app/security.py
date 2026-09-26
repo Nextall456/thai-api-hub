@@ -36,3 +36,8 @@ def new_session_token() -> str:
 def new_ref_code() -> str:
     from datetime import datetime
     return "TP" + datetime.now().strftime("%y%m%d") + secrets.token_hex(2).upper()
+
+
+def new_referral_code() -> str:
+    import secrets as _s
+    return _s.token_hex(4).upper()

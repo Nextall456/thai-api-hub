@@ -179,6 +179,14 @@ async def monitor_loop() -> None:
                 db.x("DELETE FROM usage_logs WHERE created_at < ?", (cutoff,))
                 db.x("DELETE FROM audit_logs WHERE created_at < ?", (cutoff,))
                 last_cleanup = now.hour
+                # uptime self-check: ยิง /health ของตัวเอง ยืนยันว่า live จริง
+                try:
+                    import httpx as _hx
+                    rr = await _hx.get(f"{config.SITE_URL}/health", timeout=10)
+                    if rr.status_code != 200:
+                        log.warning("self health check returned %s", rr.status_code)
+                except Exception as _e:
+                    log.warning("self health check failed: %s", _e)
         except asyncio.CancelledError:
             return
         except Exception as e:

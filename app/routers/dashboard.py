@@ -11,6 +11,8 @@ from ..api_errors import ApiError
 from ..services import router_engine
 from ..services import usage as usage_svc
 from ..services import telegram as tg_notify
+from ..services import referral as referral_svc
+from ..services import notify_channels as nc
 from ..services.providers import price_map
 from ..web import get_user, render
 
@@ -182,12 +184,22 @@ async def invoice_notify(request: Request, pay_id: int, note: str = Form("")):
                  (db.now_str(), db.plus(period_days), sub["id"]))
         db.x("UPDATE payments SET status='verified', verified_at=? WHERE id=?",
              (db.now_str(), pay_id))
+        # รางวัลแนะนำเพื่อน (ถ้าผู้ซื้อมีผู้แนะนำ)
+        referrer_id = referral_svc.grant_referral_reward(pay["user_id"])
+        if referrer_id:
+            await tg_notify.send_telegram(f"🎁 ได้รางวัลแนะนำเพื่อน! +30 วันฟรี สำหรับผู้แนะนำ #{referrer_id}")
+        pe = db.q("SELECT name_th FROM plans WHERE code=?", (pay["plan_code"],), one=True)
+        nc.email_payment_verified(user["email"], pe["name_th"] if pe else pay["plan_code"],
+                                  pay["amount_thb"], sub["ends_at"] if sub else "")
         # แจ้งเตือนแอดมิน: อนุมัติอัตโนมัติ
         await tg_notify.notify_payment_verified(pay, user["email"],
                                                 plan_name["name_th"] if plan_name else pay["plan_code"], auto=True)
         return RedirectResponse(f"/dashboard/billing/invoice/{pay_id}?msg=" +
                                 quote("อนุมัติอัตโนมัติแล้ว — แพ็กเกจเปิดใช้งานทันที"), 303)
 
+    pe = db.q("SELECT name_th FROM plans WHERE code=?", (pay["plan_code"],), one=True)
+    nc.email_payment_pending(user["email"], pe["name_th"] if pe else pay["plan_code"],
+                             pay["amount_thb"], pay["ref_code"])
     return RedirectResponse(f"/dashboard/billing/invoice/{pay_id}?msg=" +
                             quote("แจ้งชำระเงินแล้ว — รอผู้ดูแลตรวจสอบสลิปและอนุมัติ (1-24 ชม.)"), 303)
 
@@ -265,6 +277,17 @@ async def usage_page(request: Request):
     max_c = max([c["requests"] for c in chart] + [1])
     return render(request, "dash_usage.html", plan=plan, stats=stats, logs=logs,
                   by_model=by_model, chart=chart, max_c=max_c)
+
+
+# ---------------- Referral ----------------
+
+@router.get("/referral")
+async def referral_page(request: Request):
+    user = _require(request)
+    if not user:
+        return RedirectResponse("/login", 303)
+    stats = referral_svc.referral_stats(user["id"])
+    return render(request, "dash_referral.html", **stats)
 
 
 # ---------------- Playground ----------------
