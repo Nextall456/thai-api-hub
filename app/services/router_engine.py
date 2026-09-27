@@ -17,7 +17,7 @@ ALIAS_INFO = {
     "thai-hub/local": "Local Private AI (Ollama) ฟรีไม่อั้น Zero Data Leakage",
     "thai-hub/free": "Cloud Free Tier (Gemma 4, Llama 3.3 70B, Nemotron 120B)",
     "thai-hub/cheap": "Cost-Performance Leaders (Gemini 2.5 Flash Lite, Mistral Small 24B, DeepSeek V3)",
-    "thai-hub/best": "Reasoning & Quality First (DeepSeek R1, DeepSeek V3, Gemini Flash)",
+    "thai-hub/best": "Premium Quality (Claude Sonnet 4.5, GPT-4.1, Claude Haiku)",
 }
 # alias นี้ต้องใช้แพ็กเกจ tier ขั้นต่ำเท่าไร
 ALIAS_TIER = {"thai-hub/auto": 0, "thai-hub/local": 0, "thai-hub/free": 0,
