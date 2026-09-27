@@ -49,6 +49,20 @@ async def admin_home(request: Request):
                   local_models=local_models, has_or_key=bool(config.OPENROUTER_API_KEY))
 
 
+@router.get("/slip/{pay_id}")
+async def view_slip(request: Request, pay_id: int):
+    """ดูสลิปที่ลูกค้าอัปโหลด (เฉพาะแอดมิน)"""
+    user = _require_admin(request)
+    if not user:
+        return RedirectResponse("/dashboard", 303)
+    from fastapi.responses import FileResponse
+    pay = db.q("SELECT slip_path FROM payments WHERE id=?", (pay_id,), one=True)
+    path = config.SLIP_DIR / (pay["slip_path"] or "") if pay and pay["slip_path"] else None
+    if not path or not path.exists():
+        return RedirectResponse("/admin?msg=" + quote("ไม่พบไฟล์สลิป"), 303)
+    return FileResponse(str(path))
+
+
 @router.get("/users")
 async def users_page(request: Request):
     user = _require_admin(request)

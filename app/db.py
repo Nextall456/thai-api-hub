@@ -170,6 +170,9 @@ def init_db() -> None:
         conn.execute("ALTER TABLE users ADD COLUMN referral_code TEXT")
     if "referred_by" not in ucols:
         conn.execute("ALTER TABLE users ADD COLUMN referred_by INTEGER")
+    pcols = {r[1] for r in conn.execute("PRAGMA table_info(payments)")}
+    if "slip_path" not in pcols:
+        conn.execute("ALTER TABLE payments ADD COLUMN slip_path TEXT DEFAULT ''")
     import secrets as _secrets
     for (uid,) in conn.execute("SELECT id FROM users WHERE referral_code IS NULL OR referral_code=''"):
         conn.execute("UPDATE users SET referral_code=? WHERE id=?", (_secrets.token_hex(4).upper(), uid))

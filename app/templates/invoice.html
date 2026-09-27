@@ -33,7 +33,11 @@
           <li>กดปุ่ม "แจ้งชำระเงินแล้ว" ด้านล่าง พร้อมระบุเวลาที่โอน</li>
           <li>รอผู้ดูแลตรวจสอบ (ปกติภายใน 1-24 ชม.) ระบบจะเปิดแพ็กเกจให้อัตโนมัติ</li>
         </ol>
-        <form method="post" action="/dashboard/billing/invoice/{{ pay.id }}/notify" class="notify-form">
+        <form method="post" action="/dashboard/billing/invoice/{{ pay.id }}/notify" enctype="multipart/form-data" class="notify-form">
+          <div class="field">
+            <label>📸 แนบสลิปการโอน (JPG/PNG ไม่เกิน 5 MB) — ส่งเข้าแอดมินทันที</label>
+            <input type="file" name="slip" accept="image/jpeg,image/png,image/webp">
+          </div>
           <div class="field"><label>เวลา/รายละเอียดที่โอน เช่น "โอน 14:30 น. จาก Kbank"</label>
             <input type="text" name="note" maxlength="200" value="{{ pay.note }}"></div>
           <button class="btn btn-primary btn-block" type="submit">✅ แจ้งชำระเงินแล้ว</button>

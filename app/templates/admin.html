@@ -28,7 +28,7 @@
     <h2 style="margin-top:32px">รออนุมัติการชำระเงิน ({{ pending | length }})</h2>
     <div class="card table-card">
       <table class="table">
-        <tr><th>อ้างอิง</th><th>ลูกค้า</th><th>แพ็กเกจ</th><th>ระยะ</th><th>ยอด</th><th>แจ้งไว้</th><th>จัดการ</th></tr>
+        <tr><th>อ้างอิง</th><th>ลูกค้า</th><th>แพ็กเกจ</th><th>ระยะ</th><th>ยอด</th><th>สลิป</th><th>แจ้งไว้</th><th>จัดการ</th></tr>
         {% for pay in pending %}
         <tr>
           <td><code>{{ pay.ref_code }}</code></td>
@@ -36,6 +36,7 @@
           <td>{{ pay.plan_name }}</td>
           <td>{{ pay.billing_period == 'year' and 'รายปี' or 'รายเดือน' }}</td>
           <td><b>฿{{ '%.2f'|format(pay.amount_thb) }}</b></td>
+          <td>{% if pay.slip_path %}<a href="/admin/slip/{{ pay.id }}" target="_blank">📸 ดูสลิป</a>{% else %}<span class="muted">—</span>{% endif %}</td>
           <td class="muted">{{ pay.note or '—' }}<br><small>{{ pay.paid_at or '' }}</small></td>
           <td class="pay-actions">
             <form method="post" action="/admin/payments/{{ pay.id }}/verify">
@@ -47,7 +48,7 @@
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="7" class="muted center">ไม่มีรายการรออนุมัติ 🎉</td></tr>
+        <tr><td colspan="8" class="muted center">ไม่มีรายการรออนุมัติ 🎉</td></tr>
         {% endfor %}
       </table>
     </div>

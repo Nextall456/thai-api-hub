@@ -48,7 +48,7 @@ TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
 AUTO_VERIFY_PAYMENT = os.environ.get("AUTO_VERIFY_PAYMENT", "false").lower() == "true"
 
 TRIAL_DAYS = int(os.environ.get("TRIAL_DAYS", "7"))
-VERSION = "1.5.0"
+VERSION = "1.6.0"
 
 # Analytics (เว้นว่าง = ไม่เปิด)
 GA_ID = os.environ.get("GA_ID", "").strip()
@@ -64,3 +64,7 @@ SMTP_FROM = os.environ.get("SMTP_FROM", "").strip()
 # LINE Messaging API — เว้นว่าง = ไม่ใช้ LINE
 LINE_CHANNEL_ACCESS_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN", "").strip()
 LINE_ADMIN_USER_ID = os.environ.get("LINE_ADMIN_USER_ID", "").strip()
+
+# โฟลเดอร์เก็บสลิปที่ลูกค้าอัปโหลด (อยู่ใน volume)
+SLIP_DIR = DB_PATH.parent / "slips"
+SLIP_DIR.mkdir(parents=True, exist_ok=True)

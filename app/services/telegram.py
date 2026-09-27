@@ -99,3 +99,20 @@ async def notify_subscription_created(pay: dict, user_email: str, plan_name: str
         f"📦 {plan_name} ({pay['billing_period'] == 'year' and 'รายปี' or 'รายเดือน'})\n"
         f"💵 ฿{pay['amount_thb']:,.2f}\n"
         f"🔖 Ref: <code>{pay['ref_code']}</code>")
+
+
+async def send_telegram_photo(photo_bytes: bytes, caption: str, filename: str = "slip.jpg") -> bool:
+    """ส่งรูปภาพ (สลิป) พร้อมคำบรรยายเข้า Telegram แอดมิน"""
+    if not (config.TELEGRAM_BOT_TOKEN and config.TELEGRAM_CHAT_ID):
+        return False
+    try:
+        async with httpx.AsyncClient(timeout=30) as c:
+            r = await c.post(
+                f"https://api.telegram.org/bot{config.TELEGRAM_BOT_TOKEN}/sendPhoto",
+                data={"chat_id": config.TELEGRAM_CHAT_ID, "caption": caption[:1000],
+                      "parse_mode": "HTML"},
+                files={"photo": (filename, photo_bytes, "image/jpeg")},
+            )
+        return r.status_code == 200
+    except Exception:
+        return False

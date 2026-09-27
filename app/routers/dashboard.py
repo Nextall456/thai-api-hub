@@ -3,7 +3,7 @@ import time
 from datetime import datetime, timedelta
 from urllib.parse import quote
 
-from fastapi import APIRouter, Form, Request
+from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import JSONResponse, RedirectResponse
 
 from .. import config, db, security
@@ -150,7 +150,8 @@ async def invoice(request: Request, pay_id: int):
 
 
 @router.post("/billing/invoice/{pay_id}/notify")
-async def invoice_notify(request: Request, pay_id: int, note: str = Form("")):
+async def invoice_notify(request: Request, pay_id: int, note: str = Form(""),
+                         slip: UploadFile | None = File(None)):
     user = _require(request)
     if not user:
         return RedirectResponse("/login", 303)
@@ -159,13 +160,42 @@ async def invoice_notify(request: Request, pay_id: int, note: str = Form("")):
     if not pay:
         return RedirectResponse("/dashboard/billing?msg=" +
                                 quote("ไม่พบใบแจ้งหนี้นี้ หรือถูกจัดการไปแล้ว"), 303)
+
+    # บันทึกสลิปที่อัปโหลด (ถ้ามี) — จำกัด 5 MB และเฉพาะรูป
+    slip_saved = ""
+    if slip and slip.filename:
+        content = await slip.read()
+        if len(content) > 5_000_000:
+            return RedirectResponse(f"/dashboard/billing/invoice/{pay_id}?msg=" +
+                                    quote("ไฟล์สลิปใหญ่เกิน 5 MB"), 303)
+        if slip.content_type not in ("image/jpeg", "image/png", "image/webp", "image/jpg"):
+            return RedirectResponse(f"/dashboard/billing/invoice/{pay_id}?msg=" +
+                                    quote("รองรับเฉพาะไฟล์รูปภาพ JPG/PNG/WEBP"), 303)
+        ext = "png" if "png" in (slip.content_type or "") else "jpg"
+        slip_saved = f"pay{pay_id}_{int(time.time())}.{ext}"
+        (config.SLIP_DIR / slip_saved).write_bytes(content)
+        db.x("UPDATE payments SET slip_path=? WHERE id=?", (slip_saved, pay_id))
+
     db.x("UPDATE payments SET paid_at=?, note=? WHERE id=? AND user_id=? AND status='pending'",
          (db.now_str(), note.strip()[:200], pay_id, user["id"]))
 
-    # แจ้งเตือนแอดมิน: มีการแจ้งชำระเงินใหม่
+    # แจ้งเตือนแอดมิน: มีการแจ้งชำระเงินใหม่ (+ สลิปถ้ามี)
     plan_name = db.q("SELECT name_th FROM plans WHERE code=?", (pay["plan_code"],), one=True)
-    await tg_notify.notify_payment_pending(pay, user["email"],
-                                           plan_name["name_th"] if plan_name else pay["plan_code"])
+    pname = plan_name["name_th"] if plan_name else pay["plan_code"]
+    caption = (f"💰 <b>ลูกค้าแจ้งชำระเงิน</b>\n"
+               f"👤 {user['email']}\n"
+               f"📦 {pname} ({pay['billing_period'] == 'year' and 'รายปี' or 'รายเดือน'})\n"
+               f"💵 ฿{pay['amount_thb']:,.2f}\n"
+               f"🔖 Ref: <code>{pay['ref_code']}</code>\n"
+               f"📝 {note.strip()[:150] or '—'}"
+               + (f"\n📎 สลิปแนบมาด้านบน" if slip_saved else "\n(ไม่มีสลิปแนบ)"))
+    if slip_saved:
+        photo_bytes = (config.SLIP_DIR / slip_saved).read_bytes()
+        sent = await tg_notify.send_telegram_photo(photo_bytes, caption, slip_saved)
+        if not sent:  # ส่งรูปไม่สำเร็จ → ส่งข้อความแทน
+            await tg_notify.notify_payment_pending(pay, user["email"], pname)
+    else:
+        await tg_notify.notify_payment_pending(pay, user["email"], pname)
 
     if config.AUTO_VERIFY_PAYMENT:
         # โหมดอนุมัติอัตโนมัติ (เปิด/ปิดที่ AUTO_VERIFY_PAYMENT ใน .env)
