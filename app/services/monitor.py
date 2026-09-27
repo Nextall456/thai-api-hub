@@ -133,11 +133,32 @@ async def check_and_alert() -> None:
                 f"🚨 <b>Alert: Error Rate สูง!</b>\n"
                 f"⚠ {rate:.1f}% ของ {s['requests_24h']} คำขอใน 24 ชม. ล้มเหลว\n"
                 f"🔎 ตรวจสอบ: {config.SITE_URL}/admin")
-    if s["pending_payments"] >= 1:
-        if _should_alert("pending_payments", str(s["pending_payments"])):
-            await tg.send_telegram(
-                f"⏳ <b>มีบิลรออนุมัติ {s['pending_payments']} รายการ</b>\n"
-                f"→ {config.SITE_URL}/admin")
+    # บิล pending: แยก "แจ้งชำระแล้วรอตรวจสอบ" ออกจาก "ลูกค้ายังไม่แจ้งชำระ"
+    await _alert_bills(tg)
+
+
+async def _alert_bills(tg) -> None:
+    """แจ้งเตือนบิล pending แยกตามสถานะจริง + ระบุอีเมลลูกค้า"""
+    notified = db.q(
+        "SELECT pay.ref_code, pay.amount_thb, pay.plan_code, u.email "
+        "FROM payments pay JOIN users u ON u.id=pay.user_id "
+        "WHERE pay.status='pending' AND pay.paid_at != '' ORDER BY pay.id DESC LIMIT 5")
+    unpaid = db.q(
+        "SELECT pay.ref_code, pay.amount_thb, pay.plan_code, u.email "
+        "FROM payments pay JOIN users u ON u.id=pay.user_id "
+        "WHERE pay.status='pending' AND (pay.paid_at = '' OR pay.paid_at IS NULL) "
+        "ORDER BY pay.id DESC LIMIT 5")
+    if notified and _should_alert("bills_awaiting_approval", str(len(notified))):
+        lines = [f"⏳ <b>มีบิลแจ้งชำระแล้ว รอตรวจสอบ {len(notified)} รายการ</b>"]
+        for b in notified:
+            lines.append(f"• {b['email']} · {b['plan_code']} ฿{b['amount_thb']:,.0f} · <code>{b['ref_code']}</code>")
+        lines.append(f"→ {config.SITE_URL}/admin")
+        await tg.send_telegram("\n".join(lines))
+    if unpaid and _should_alert("bills_unpaid", str(len(unpaid))):
+        lines = [f"🧾 <b>มี {len(unpaid)} บิลที่ลูกค้ายังไม่แจ้งชำระ</b> (สร้างบิลแล้วรอโอนเงิน)"]
+        for b in unpaid:
+            lines.append(f"• {b['email']} · {b['plan_code']} ฿{b['amount_thb']:,.0f}")
+        await tg.send_telegram("\n".join(lines))
 
 
 async def daily_report() -> None:
