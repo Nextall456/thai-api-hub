@@ -48,12 +48,13 @@ async def resolve_chain(model: str, plan: dict | None) -> list[tuple[str, str]]:
             return chain
         free = await pick_models("free")
         cheap = await pick_models("cheap")
+        best = await pick_models("best")
         if model == "thai-hub/free":
             return [("openrouter", m) for m in free]
         if model == "thai-hub/cheap":
             return [("openrouter", m) for m in cheap]
         if model == "thai-hub/best":
-            return [("openrouter", m) for m in (cheap[:2] + free[:1])]
+            return [("openrouter", m) for m in (best[:2] + cheap[:1])]
         # thai-hub/auto
         chain: list[tuple[str, str]] = []
         if policy == "quality_first":

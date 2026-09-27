@@ -24,6 +24,15 @@ CHEAP_PRIORITY = [
     "openai/gpt-4o-mini",
     "google/gemini-2.5-flash",
 ]
+# สายคุณภาพสูงสุด (แพ็กเกจ Pro/Business): โมเดลพรีเมียมจริง ต่างจาก cheap
+BEST_PRIORITY = [
+    "anthropic/claude-sonnet-4.5",
+    "openai/gpt-4.1-mini",
+    "anthropic/claude-3.5-haiku",
+    "google/gemini-2.5-flash",
+    "deepseek/deepseek-chat-v3.1",
+    "openai/gpt-4o",
+]
 
 _cache = {"models_ts": 0.0, "models": [], "ollama_ts": 0.0, "ollama": []}
 
@@ -111,8 +120,9 @@ def price_map() -> dict[str, tuple[float, float]]:
 
 
 async def pick_models(kind: str) -> list[str]:
-    """เลือกโมเดลฟรี / ราคาถูก โดยตรวจกับคลังจริงของ OpenRouter ถ้าหาได้"""
-    static = FREE_PRIORITY if kind == "free" else CHEAP_PRIORITY
+    """เลือกโมเดลฟรี / ราคาถูก / พรีเมียม โดยตรวจกับคลังจริงของ OpenRouter ถ้าหาได้"""
+    static = {"free": FREE_PRIORITY, "cheap": CHEAP_PRIORITY, "best": BEST_PRIORITY}.get(kind, CHEAP_PRIORITY)
+    price_cap = {"free": 0.0, "cheap": 1.0, "best": 3.0}[kind]
     models = await fetch_openrouter_models()
     if not models:
         return static
@@ -123,7 +133,7 @@ async def pick_models(kind: str) -> list[str]:
                and m["ctx"] >= 32_000]
     else:
         dyn = [m["id"] for m in models
-               if 0 < m["prompt_price"] <= 1.0 and ":free" not in m["id"] and m["ctx"] >= 32_000]
+               if 0 < m["prompt_price"] <= price_cap and ":free" not in m["id"] and m["ctx"] >= 32_000]
     for i in dyn:
         if i not in ids:
             ids.append(i)
