@@ -105,7 +105,9 @@ async def signup(request: Request, name: str = Form(""), email: str = Form(""),
     if referrer:
         re_row = db.q("SELECT email FROM users WHERE id=?", (referrer["id"],), one=True)
         referrer_email = re_row["email"] if re_row else ""
-    await tg_notify.notify_new_user(user, "ทดลองใช้ฟรี 7 วัน", referrer_email)
+    from ..services.monitor import member_breakdown, _fmt_breakdown
+    await tg_notify.notify_new_user(user, "ทดลองใช้ฟรี 7 วัน", referrer_email,
+                                    _fmt_breakdown(member_breakdown()))
     nc.email_welcome(email, name)
     resp = RedirectResponse("/dashboard?msg=" + quote(
         f"สมัครสำเร็จ! ทดลองใช้ฟรี {config.TRIAL_DAYS} วัน — สร้าง API Key ได้เลย"), 303)

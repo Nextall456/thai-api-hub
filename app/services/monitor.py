@@ -17,6 +17,33 @@ _fallback = {
 }
 
 
+def member_breakdown() -> dict:
+    """นับสมาชิกแยกประเภทปัจจุบัน: trial / starter / pro / business / ไม่มีแพ็กเกจ"""
+    now = db.now_str()
+    subs = db.q("SELECT plan_code, COUNT(*) c FROM subscriptions "
+                "WHERE status='active' AND ends_at > ? GROUP BY plan_code", (now,))
+    by_plan = {r["plan_code"]: r["c"] for r in subs}
+    active_in_subs = sum(by_plan.values())
+    # trial = ยังไม่หมดอายุ trial และไม่มี sub active
+    trial = db.q("SELECT COUNT(*) c FROM users u WHERE u.trial_ends_at > ? "
+                 "AND NOT EXISTS (SELECT 1 FROM subscriptions s WHERE s.user_id=u.id "
+                 "AND s.status='active' AND s.ends_at > ?)", (now, now), one=True)["c"]
+    total = db.q("SELECT COUNT(*) c FROM users", one=True)["c"]
+    return {
+        "trial": trial,
+        "starter": by_plan.get("starter", 0),
+        "pro": by_plan.get("pro", 0),
+        "business": by_plan.get("business", 0),
+        "none": max(0, total - trial - active_in_subs),
+        "total": total,
+    }
+
+
+def _fmt_breakdown(b: dict) -> str:
+    return (f"🆓 Trial {b['trial']} · 🌱 Starter {b['starter']} · ⭐ Pro {b['pro']} · "
+            f"🏢 ธุรกิจ {b['business']} · ⚪ ไม่มีแพ็กเกจ {b['none']}")
+
+
 def collect_stats() -> dict:
     """รวมสถิติทั้งระบบจาก DB (ใช้ทั้ง /metrics และรายงานประจำวัน)"""
     try:
@@ -97,6 +124,16 @@ def render_prometheus(s: dict) -> str:
         "# TYPE thai_api_hub_bot_chats gauge",
         f"thai_api_hub_bot_chats {s['bot_chats']}",
     ]
+    mb = member_breakdown()
+    lines += [
+        "# HELP thai_api_hub_members_by_plan Members by current plan type",
+        "# TYPE thai_api_hub_members_by_plan gauge",
+        f'thai_api_hub_members_by_plan{{plan="trial"}} {mb["trial"]}',
+        f'thai_api_hub_members_by_plan{{plan="starter"}} {mb["starter"]}',
+        f'thai_api_hub_members_by_plan{{plan="pro"}} {mb["pro"]}',
+        f'thai_api_hub_members_by_plan{{plan="business"}} {mb["business"]}',
+        f'thai_api_hub_members_by_plan{{plan="none"}} {mb["none"]}',
+    ]
     if s["requests_24h"] > 0:
         err_rate = s["errors_24h"] / s["requests_24h"] * 100
         lines += [
@@ -174,6 +211,7 @@ async def daily_report() -> None:
         f"💰 รายได้วันนี้: <b>฿{s['revenue_24h']:,.0f}</b> (รวม ฿{s['revenue_total']:,.0f})\n"
         f"📦 แพ็กเกจ active: {s['subs_active']}\n"
         f"⏳ บิลรออนุมัติ: {s['pending_payments']}\n"
+        f"👥 สมาชิกแยกประเภท: {_fmt_breakdown(member_breakdown())}\n"
         f"🤖 บอท: {s['bot_msgs_24h']} ข้อความ\n"
         f"💵 ต้นทุน OR เดือนนี้: ${s['cost_month_usd']:.4f}")
     # รายชื่อสมาชิกใหม่ 24 ชม.

@@ -73,8 +73,12 @@ def _fmt_error(err: str, context: str = "") -> str:
 
 
 # async wrappers สำหรับเรียกจาก async context
-async def notify_new_user(user: dict, plan: str, referrer_email: str = "") -> bool:
-    return await send_telegram(_fmt_new_user(user, plan, referrer_email))
+async def notify_new_user(user: dict, plan: str, referrer_email: str = "",
+                          breakdown_text: str = "") -> bool:
+    msg = _fmt_new_user(user, plan, referrer_email)
+    if breakdown_text:
+        msg += f"\n\n📊 <b>สมาชิกปัจจุบัน</b>\n{breakdown_text}"
+    return await send_telegram(msg)
 
 
 async def notify_payment_pending(pay: dict, user_email: str, plan_name: str) -> bool:
