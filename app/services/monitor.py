@@ -199,6 +199,17 @@ async def monitor_loop() -> None:
                 cutoff = (datetime.now() - timedelta(days=90)).strftime(db.FMT)
                 db.x("DELETE FROM usage_logs WHERE created_at < ?", (cutoff,))
                 db.x("DELETE FROM audit_logs WHERE created_at < ?", (cutoff,))
+                # บิลที่ไม่ชำระเกิน 7 วัน → หมดอายุอัตโนมัติ (รวม subscription ค้าง)
+                bill_cutoff = (datetime.now() - timedelta(days=7)).strftime(db.FMT)
+                stale = db.q("SELECT id, subscription_id FROM payments WHERE status='pending' "
+                             "AND (paid_at='' OR paid_at IS NULL) AND created_at < ?", (bill_cutoff,))
+                for b in stale:
+                    db.x("UPDATE payments SET status='expired' WHERE id=?", (b["id"],))
+                    if b["subscription_id"]:
+                        db.x("UPDATE subscriptions SET status='expired' WHERE id=? AND status='pending_payment'",
+                             (b["subscription_id"],))
+                if stale:
+                    log.info("expired %d stale unpaid bills (>7 days)", len(stale))
                 last_cleanup = now.hour
                 # uptime self-check: ยิง /health ของตัวเอง ยืนยันว่า live จริง
                 try:
