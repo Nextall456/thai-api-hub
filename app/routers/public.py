@@ -101,7 +101,11 @@ async def signup(request: Request, name: str = Form(""), email: str = Form(""),
                 db.plus(config.TRIAL_DAYS), db.now_str(),
                 security.new_referral_code(), referrer["id"] if referrer else None))
     user = db.q("SELECT * FROM users WHERE id=?", (uid,), one=True)
-    await tg_notify.notify_new_user(user, "ทดลองใช้ฟรี 7 วัน")
+    referrer_email = ""
+    if referrer:
+        re_row = db.q("SELECT email FROM users WHERE id=?", (referrer["id"],), one=True)
+        referrer_email = re_row["email"] if re_row else ""
+    await tg_notify.notify_new_user(user, "ทดลองใช้ฟรี 7 วัน", referrer_email)
     nc.email_welcome(email, name)
     resp = RedirectResponse("/dashboard?msg=" + quote(
         f"สมัครสำเร็จ! ทดลองใช้ฟรี {config.TRIAL_DAYS} วัน — สร้าง API Key ได้เลย"), 303)

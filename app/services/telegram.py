@@ -23,13 +23,15 @@ async def send_telegram(text: str, parse_mode: str = "HTML") -> bool:
         return False
 
 
-def _fmt_new_user(user: dict, plan: str) -> str:
+def _fmt_new_user(user: dict, plan: str, referrer_email: str = "") -> str:
+    ref_line = f"\n🎁 มาจากการแนะนำของ: <b>{referrer_email}</b>" if referrer_email else ""
     return (
-        f"👤 <b>สมาชิกใหม่</b>\n"
+        f"👤 <b>สมาชิกใหม่สมัครฟรี!</b>\n"
         f"📧 {user['email']}\n"
         f"👤 {user.get('name') or '-'}\n"
-        f"📦 แพ็กเกจ: {plan}\n"
-        f"🆔 User ID: {user['id']}"
+        f"📦 แพ็กเกจ: {plan}{ref_line}\n"
+        f"🆔 User ID: {user['id']}\n"
+        f"🕒 {user.get('created_at', '')}"
     )
 
 
@@ -71,8 +73,8 @@ def _fmt_error(err: str, context: str = "") -> str:
 
 
 # async wrappers สำหรับเรียกจาก async context
-async def notify_new_user(user: dict, plan: str) -> bool:
-    return await send_telegram(_fmt_new_user(user, plan))
+async def notify_new_user(user: dict, plan: str, referrer_email: str = "") -> bool:
+    return await send_telegram(_fmt_new_user(user, plan, referrer_email))
 
 
 async def notify_payment_pending(pay: dict, user_email: str, plan_name: str) -> bool:

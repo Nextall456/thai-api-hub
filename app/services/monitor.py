@@ -176,6 +176,12 @@ async def daily_report() -> None:
         f"⏳ บิลรออนุมัติ: {s['pending_payments']}\n"
         f"🤖 บอท: {s['bot_msgs_24h']} ข้อความ\n"
         f"💵 ต้นทุน OR เดือนนี้: ${s['cost_month_usd']:.4f}")
+    # รายชื่อสมาชิกใหม่ 24 ชม.
+    new_users = db.q("SELECT email, name FROM users WHERE created_at >= ? ORDER BY id DESC LIMIT 10",
+                     ((datetime.now() - timedelta(hours=24)).strftime(db.FMT),))
+    if new_users:
+        names = "\n".join(f"  • {u['email']}" + (f" ({u['name']})" if u['name'] else "") for u in new_users)
+        await tg.send_telegram(f"🆕 <b>สมาชิกใหม่ 24 ชม. ({len(new_users)} คน)</b>\n{names}")
 
 
 async def monitor_loop() -> None:
